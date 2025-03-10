@@ -130,14 +130,14 @@ export default function HomeClient() {
 
   return (
     <div
-      className="flex min-h-screen flex-col"
+      className="flex min-h-screen flex-col mt-20"
       style={{
         backgroundImage: "url('/websitebackground.png')",
         backgroundSize: "100vw", // Smaller pattern on mobile
         backgroundAttachment: "scroll",
       }}
     >
-      <header className="fixed top-0 z-50 w-full bg-transparent backdrop-blur-sm">
+      <header className="fixed top-0 z-50 w-full bg-transparent backdrop-blur-sm height-[80px]">
         <div className="container flex h-16 md:h-20 items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <Image src="/primary-logo.svg" alt="Stripy Logo" width={100} height={20} className="rounded-sm" />
@@ -153,10 +153,9 @@ export default function HomeClient() {
         {/* Hero Section */}
         <section
           ref={heroRef}
-          className="relative mt-16 md:mt-20 overflow-hidden w-full"
+          className="relative overflow-hidden w-full"
           style={{
-            height: "min(calc(100vh - 5rem), 800px)",
-            maxHeight: "90vh",
+            height: "calc(100vh - 80px)",
           }}
         >
           {/* Hero image container with aspect ratio preservation */}
