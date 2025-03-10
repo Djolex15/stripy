@@ -1,0 +1,243 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 13%; /* #212121 */
+    --foreground: 0 0% 100%; /* #ffffff */
+    --card: 0 0% 13%; /* #212121 */
+    --card-foreground: 0 0% 100%; /* #ffffff */
+    --popover: 0 0% 13%; /* #212121 */
+    --popover-foreground: 0 0% 100%; /* #ffffff */
+    --primary: 65 100% 50%; /* #cbff01 */
+    --primary-foreground: 0 0% 13%; /* #212121 */
+    --secondary: 0 0% 18%; /* #2e2e2e - slightly lighter than background */
+    --secondary-foreground: 0 0% 100%; /* #ffffff */
+    --muted: 0 0% 18%; /* #2e2e2e */
+    --muted-foreground: 0 0% 70%; /* #b3b3b3 */
+    --accent: 65 100% 50%; /* #cbff01 */
+    --accent-foreground: 0 0% 13%; /* #212121 */
+    --destructive: 0 84.2% 60.2%; /* keeping original */
+    --destructive-foreground: 0 0% 100%; /* #ffffff */
+    --border: 0 0% 20%; /* #333333 */
+    --input: 0 0% 20%; /* #333333 */
+    --ring: 65 100% 50%; /* #cbff01 */
+    --radius: 0.5rem;
+
+    /* Chart colors - keeping these in case they're used */
+    --chart-1: 65 100% 50%; /* #cbff01 - primary green */
+    --chart-2: 0 0% 100%; /* #ffffff - white */
+    --chart-3: 0 0% 80%; /* #cccccc - light gray */
+    --chart-4: 0 0% 60%; /* #999999 - medium gray */
+    --chart-5: 0 0% 40%; /* #666666 - dark gray */
+  }
+
+  .dark {
+    --background: 0 0% 13%; /* #212121 */
+    --foreground: 0 0% 100%; /* #ffffff */
+    --card: 0 0% 13%; /* #212121 */
+    --card-foreground: 0 0% 100%; /* #ffffff */
+    --popover: 0 0% 13%; /* #212121 */
+    --popover-foreground: 0 0% 100%; /* #ffffff */
+    --primary: 65 100% 50%; /* #cbff01 */
+    --primary-foreground: 0 0% 13%; /* #212121 */
+    --secondary: 0 0% 18%; /* #2e2e2e - slightly lighter than background */
+    --secondary-foreground: 0 0% 100%; /* #ffffff */
+    --muted: 0 0% 18%; /* #2e2e2e */
+    --muted-foreground: 0 0% 70%; /* #b3b3b3 */
+    --accent: 65 100% 50%; /* #cbff01 */
+    --accent-foreground: 0 0% 13%; /* #212121 */
+    --destructive: 0 84.2% 60.2%; /* keeping original */
+    --destructive-foreground: 0 0% 100%; /* #ffffff */
+    --border: 0 0% 20%; /* #333333 */
+    --input: 0 0% 20%; /* #333333 */
+    --ring: 65 100% 50%; /* #cbff01 */
+
+    /* Chart colors - keeping these in case they're used */
+    --chart-1: 65 100% 50%; /* #cbff01 - primary green */
+    --chart-2: 0 0% 100%; /* #ffffff - white */
+    --chart-3: 0 0% 80%; /* #cccccc - light gray */
+    --chart-4: 0 0% 60%; /* #999999 - medium gray */
+    --chart-5: 0 0% 40%; /* #666666 - dark gray */
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+    letter-spacing: 1px;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Archivo", sans-serif;
+  }
+}
+
+/* Font definitions */
+
+
+/* Font definitions */
+@font-face {
+  font-family: "Archivo";
+  src: url("/fonts/Archivo-Black.woff") format("woff");
+  font-weight: 900;
+  font-display: swap;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Archivo";
+  src: url("/fonts/Archivo-BlackItalic.woff") format("woff");
+  font-weight: 900;
+  font-display: swap;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "Archivo";
+  src: url("/fonts/Archivo-Bold.woff") format("woff");
+  font-weight: 700;
+  font-display: swap;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Archivo";
+  src: url("/fonts/Archivo-BoldItalic.woff") format("woff");
+  font-weight: 700;
+  font-display: swap;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "Archivo";
+  src: url("/fonts/Archivo-ExtraBold.woff") format("woff");
+  font-weight: 800;
+  font-display: swap;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Archivo";
+  src: url("/fonts/Archivo-ExtraBoldItalic.woff") format("woff");
+  font-weight: 800;
+  font-display: swap;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "Archivo";
+  src: url("/fonts/Archivo-ExtraLight.woff") format("woff");
+  font-weight: 200;
+  font-display: swap;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Archivo";
+  src: url("/fonts/Archivo-ExtraLightItalic.woff") format("woff");
+  font-weight: 200;
+  font-display: swap;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "Archivo";
+  src: url("/fonts/Archivo-Italic.woff") format("woff");
+  font-weight: 400;
+  font-display: swap;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "Archivo";
+  src: url("/fonts/Archivo-Light.woff") format("woff");
+  font-weight: 300;
+  font-display: swap;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Archivo";
+  src: url("/fonts/Archivo-LightItalic.woff") format("woff");
+  font-weight: 300;
+  font-display: swap;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "Archivo";
+  src: url("/fonts/Archivo-Medium.woff") format("woff");
+  font-weight: 500;
+  font-display: swap;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Archivo";
+  src: url("/fonts/Archivo-MediumItalic.woff") format("woff");
+  font-weight: 500;
+  font-display: swap;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "Archivo";
+  src: url("/fonts/Archivo-Regular.woff") format("woff");
+  font-weight: 400;
+  font-display: swap;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Archivo";
+  src: url("/fonts/Archivo-SemiBold.woff") format("woff");
+  font-weight: 600;
+  font-display: swap;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Archivo";
+  src: url("/fonts/Archivo-SemiBoldItalic.woff") format("woff");
+  font-weight: 600;
+  font-display: swap;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "Archivo";
+  src: url("/fonts/Archivo-Thin.woff") format("woff");
+  font-weight: 100;
+  font-display: swap;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Archivo";
+  src: url("/fonts/Archivo-ThinItalic.woff") format("woff");
+  font-weight: 100;
+  font-display: swap;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "Archivo";
+  src: url("/fonts/Archivo-Variable.woff") format("woff");
+  font-weight: 100 900;
+  font-display: swap;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Archivo";
+  src: url("/fonts/Archivo-VariableItalic.woff") format("woff");
+  font-weight: 100 900;
+  font-display: swap;
+  font-style: italic;
+}
