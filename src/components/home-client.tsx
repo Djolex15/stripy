@@ -126,7 +126,7 @@ export default function HomeClient() {
   }
 
   // Define consistent section spacing - changed to py-5 for all sections
-  const sectionSpacing = "py-5"
+  const sectionSpacing = "py-8"
 
   return (
     <div
@@ -195,7 +195,7 @@ export default function HomeClient() {
         {/* Product Offers Section */}
         <section id="products" className={`container ${sectionSpacing}`}>
           <h2 className="mb-8 text-center text-2xl md:text-3xl font-bold tracking-tight sm:text-4xl">
-            {t("ourProducts")}
+            {t("heroTitle")}
           </h2>
           <div className="grid gap-8 md:gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {products.map((product, index) => (
@@ -205,9 +205,9 @@ export default function HomeClient() {
         </section>
 
         {/* Oslobodi potencijal */}
-        <section className={`w-full ${sectionSpacing}`}>
+        <section className={"w-full " + (-sectionSpacing)}>
           <div className="relative w-full">
-            <div className="relative aspect-[16/10] w-full">
+            <div className="relative aspect-[16/9] w-full">
               <Image
                 src={getPotentialImage() || "/placeholder.svg"}
                 alt={t("oslobodiPotencijal")}
@@ -219,6 +219,9 @@ export default function HomeClient() {
             </div>
           </div>
         </section>
+
+        {/* Science of Breathing Section - NEW SECTION */}
+
 
         {/* Why Use Stripy Section */}
         <section className={`${sectionSpacing} relative overflow-hidden`}>
@@ -308,20 +311,20 @@ export default function HomeClient() {
           <div className="grid gap-6 md:gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
             <div>
               <h3 className="mb-3 md:mb-4 text-base md:text-lg font-semibold">{t("aboutStripy")}</h3>
-              <p className="text-sm md:text-base text-muted-foreground">{t("aboutStripyDesc")}</p>
+              <p className="text-sm md:text-base text-muted-foreground">{t("heroSubtitle")}</p>
             </div>
             <div>
               <h3 className="mb-3 md:mb-4 text-base md:text-lg font-semibold">{t("contactUs")}</h3>
               <p className="text-sm md:text-base text-muted-foreground">Email: info@mystripy.com</p>
               <div className="mt-3 md:mt-4 flex gap-3 md:gap-4">
-                <a href="#" className="text-sm md:text-base text-muted-foreground hover:text-foreground">
+                <a href="https://www.facebook.com/profile.php?id=61574093874513" className="text-sm md:text-base text-muted-foreground hover:text-foreground">
                   Facebook
                 </a>
-                <a href="#" className="text-sm md:text-base text-muted-foreground hover:text-foreground">
+                <a href="https://www.instagram.com/mystripy/" className="text-sm md:text-base text-muted-foreground hover:text-foreground">
                   Instagram
                 </a>
-                <a href="#" className="text-sm md:text-base text-muted-foreground hover:text-foreground">
-                  Twitter
+                <a href="https://www.tiktok.com/@mystripy" className="text-sm md:text-base text-muted-foreground hover:text-foreground">
+                  TikTok
                 </a>
               </div>
             </div>
@@ -334,12 +337,12 @@ export default function HomeClient() {
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="text-sm md:text-base text-muted-foreground hover:text-foreground">
+                  <a href="/privacy-policy" className="text-sm md:text-base text-muted-foreground hover:text-foreground">
                     {t("privacyPolicy")}
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="text-sm md:text-base text-muted-foreground hover:text-foreground">
+                  <a href="/terms-of-service" className="text-sm md:text-base text-muted-foreground hover:text-foreground">
                     {t("termsOfService")}
                   </a>
                 </li>

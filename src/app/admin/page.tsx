@@ -224,8 +224,7 @@ export default function AdminPage() {
 
   const backgroundStyle = {
     backgroundImage: "url('/websitebackground.png')",
-    backgroundRepeat: "repeat",
-    backgroundSize: isMobile ? "100px" : "200px", // Smaller pattern on mobile
+    backgroundSize: "100vw",
     backgroundAttachment: "scroll",
   }
 

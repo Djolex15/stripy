@@ -19,7 +19,7 @@ const enResources = {
     itemAddedToCart: "Item added to cart!",
 
     // Landing page sections
-    heroTitle: "Breathe Better. Sleep Better.",
+    heroTitle: "Choose Your Breath. Own Your Performance.",
     heroSubtitle:
       "Stripy nasal strips open your nasal passages for improved breathing, reduced snoring, and better sleep quality.",
     orderNow: "Order Now",
@@ -36,6 +36,34 @@ const enResources = {
     athleticPerformanceDesc:
       "Optimize your breathing during physical activities for improved endurance and performance.",
     faq: "Frequently Asked Questions",
+
+    // Science of Breathing Section
+    scienceOfBreathingTitle: "The Science of Breathing, The Art of Performance",
+    trainBodyMind: "You train your body. You train your mind. But what about your breath?",
+    topPerformers: "From NBA players to UFC fighters, biohackers to business moguls, the world's top performers know that better breathing = better everything.",
+    takeControl: "It's time to take control. To own your air. To breathe like you were meant to.",
+    joinMovement: "Join the Stripy movement.",
+    everyBreathChoice: "Because every breath is a choice.",
+    chooseToWin: "And with Stripy, you choose to win.",
+
+    // What Stripy Does Section
+    whatStripyDoesTitle: "💨 What Stripy Does for You:",
+    opensAirways: "Opens up your airways",
+    opensAirwaysDesc: "More oxygen, more endurance, more energy.",
+    reducesSnoring: "Reduces snoring",
+    reducesSnoringSleepDesc: "So you (and everyone around you) can sleep like a champion.",
+    maximizesOxygen: "Maximizes oxygen intake",
+    maximizesOxygenDesc: "For better workouts, sharper focus, and faster recovery.",
+    nonInvasive: "Non-invasive, drug-free",
+    nonInvasiveDesc: "Just pure breathing power, whenever you need it.",
+
+    // Product Descriptions
+    testPackName: "Test Pack (10 Strips)",
+    testPackDesc: "Not sure yet? Try it. Feel the difference. One breath is all it takes.",
+    monthlyPackName: "Monthly Pack (30 Strips)",
+    monthlyPackDesc: "Your daily upgrade for unstoppable energy, better sleep, and peak performance. One month. A lifetime of better breathing.",
+    himHerPackName: "Him & Her Pack (60 Strips)",
+    himHerPackDesc: "Because great nights and powerful days shouldn't be a solo mission. Breathe better. Together.",
 
     // Cart related
     yourCart: "Your Cart",
@@ -224,9 +252,9 @@ const srResources = {
     itemAddedToCart: "Proizvod dodat u korpu!",
 
     // Landing page sections
-    heroTitle: "Dišite bolje. Spavajte bolje.",
+    heroTitle: "Izaberi svoj dah. Ostvari svoj performans.",
     heroSubtitle:
-      "Stripy nazalne trake otvaraju vaše nosne prolaze za poboljšano disanje, smanjeno hrkanje i bolji kvalitet sna.",
+      "Stripy nosne trake otvaraju tvoje nazalne kanale za bolje disanje, smanjeno hrkanje i bolji kvalitet sna.",
     orderNow: "Poručite odmah",
     ourProducts: "Naši proizvodi",
     whyUseStripy: "Zašto koristiti Stripy?",
@@ -239,6 +267,34 @@ const srResources = {
     athleticPerformance: "Sportske performanse",
     athleticPerformanceDesc: "Optimizujte disanje tokom fizičkih aktivnosti za poboljšanu izdržljivost i performanse.",
     faq: "Često postavljana pitanja",
+
+    // Science of Breathing Section
+    scienceOfBreathingTitle: "Nauka disanja, umetnost performansa",
+    trainBodyMind: "Treniraš svoje telo. Treniraš svoj um. Ali šta je sa tvojim dahom?",
+    topPerformers: "Od NBA igrača do UFC boraca, biohakera do poslovnih lidera – najbolji na svetu znaju da bolje disanje znači bolji učinak u svemu.",
+    takeControl: "Vreme je da preuzmeš kontrolu. Da ovladaš svojim dahom. Da dišeš onako kako je prirodno.",
+    joinMovement: "Pridruži se Stripy pokretu.",
+    everyBreathChoice: "Jer svaki dah je izbor.",
+    chooseToWin: "A sa Stripyjem, biraš pobedu.",
+
+    // What Stripy Does Section
+    whatStripyDoesTitle: "Šta Stripy radi za tebe:",
+    opensAirways: "Otvara disajne puteve",
+    opensAirwaysDesc: "Više kiseonika, više izdržljivosti, više energije.",
+    reducesSnoring: "Smanjuje hrkanje",
+    reducesSnoringSleepDesc: "Tako da ti (i svi oko tebe) možeš spavati kao šampion.",
+    maximizesOxygen: "Maksimizira unos kiseonika",
+    maximizesOxygenDesc: "Za bolje treninge, oštriji fokus i brži oporavak.",
+    nonInvasive: "Neinvazivno i bez lekova",
+    nonInvasiveDesc: "Samo čista moć disanja, kad god ti zatreba.",
+
+    // Product Descriptions
+    testPackName: "Test pakovanje (10 traka)",
+    testPackDesc: "Nisi siguran? Isprobaj. Oseti razliku već nakon prvog daha.",
+    monthlyPackName: "Mesečno pakovanje (30 traka)",
+    monthlyPackDesc: "Tvoj dnevni upgrade za nezaustavljivu energiju, bolji san i vrhunske performanse. Jedan mesec, doživotno bolje disanje.",
+    himHerPackName: "Him & Her pakovanje (60 traka)",
+    himHerPackDesc: "Jer su mirne noći i moćni dani bolji kada su u dvoje. Dišite bolje, zajedno.",
 
     // Cart related
     yourCart: "Vaša korpa",
@@ -464,4 +520,3 @@ export function useTranslation() {
 }
 
 export default i18n
-

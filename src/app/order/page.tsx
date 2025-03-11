@@ -6,6 +6,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { ArrowLeft, Send, Tag, X } from "lucide-react"
+import Cookies from "js-cookie"
 
 import { Button } from "@/src/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/src/components/ui/card"
@@ -149,7 +150,6 @@ export default function OrderPage() {
     setFormData((prev) => ({ ...prev, promoCode: "" }))
   }
 
-  // Replace the handleSubmit function with this updated version
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -176,42 +176,37 @@ export default function OrderPage() {
       const currency = i18n.language === "sr" ? "RSD" : "EUR"
 
       // Send the order with currency information
-      await sendOrderInquiry({
+      const result = await sendOrderInquiry({
         customerInfo: formData,
         orderItems: cart,
         totalPrice,
-        currency, // Add the currency information
+        currency,
         appliedPromoCode: appliedPromo ? appliedPromo.code : undefined,
       })
 
-      // Clear both cart and saved form data on successful order
-      clearCart()
-      clearOrderFormData()
+      if (result.success) {
+        // Clear both cart and saved form data on successful order
+        clearCart()
+        clearOrderFormData()
 
-      // Replace this line:
-      // window.location.href = "/order-success"
+        // Store the order ID in cookies before redirecting
+        if (result.orderId) {
+          Cookies.set("lastOrderId", result.orderId, { expires: 1 })
+        }
 
-      // With this code:
-      try {
-        console.log("Redirecting to order success page...")
-
-        window.location.href = "/order-success"
-
-        // As a fallback, also use window.location after a short delay
-        setTimeout(() => {
-          window.location.href = "/order-success"
-        }, 100)
-      } catch (redirectError) {
-        console.error("Redirect error:", redirectError)
-        // Force redirect as last resort
-        window.location.replace("/order-success")
+        // Use window.location.href for a full page navigation to ensure the page is fully reloaded
+        window.location.href = `/order-success?orderId=${result.orderId}`
+      } else {
+        throw new Error(result.error || "Order submission failed")
       }
     } catch (error) {
+      console.error("Order submission error:", error)
       toast({
         title: t("orderError"),
         description: t("orderErrorMessage"),
         variant: "destructive",
       })
+    } finally {
       setIsSubmitting(false)
     }
   }
@@ -222,180 +217,179 @@ export default function OrderPage() {
       style={{
         backgroundImage: "url('/websitebackground.png')",
         backgroundRepeat: "repeat",
-        backgroundSize: "100vw", // Adjust this value to control how "unzoomed" the texture appears
-        backgroundAttachment: "scroll", // Makes the background scroll with the content
+        backgroundSize: "100vw",
+        backgroundAttachment: "scroll",
       }}
     >
+      <div className="container mx-auto py-8 md:py-16">
+        <h1 className="mb-8 text-3xl font-bold">{t("completeYourOrder")}</h1>
 
-    <div className="container mx-auto py-8 md:py-16">
-      <h1 className="mb-8 text-3xl font-bold">{t("completeYourOrder")}</h1>
-
-      <div className="grid gap-8 md:grid-cols-3">
-        <div className="md:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("customerInformation")}</CardTitle>
-              <CardDescription>{t("pleaseProvideYourDetails")}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form id="order-form" onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">{t("fullName")} *</Label>
-                    <Input id="name" name="name" value={formData.name} onChange={handleChange} required />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email">{t("email")} *</Label>
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      required
+        <div className="grid gap-8 md:grid-cols-3">
+          <div className="md:col-span-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("customerInformation")}</CardTitle>
+                <CardDescription>{t("pleaseProvideYourDetails")}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form id="order-form" onSubmit={handleSubmit} className="space-y-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="name">{t("fullName")} *</Label>
+                      <Input id="name" name="name" value={formData.name} onChange={handleChange} required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email">{t("email")} *</Label>
+                      <Input
+                        id="email"
+                        name="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        required
                       />
+                    </div>
                   </div>
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="phone">{t("phoneNumber")} *</Label>
-                  <Input id="phone" name="phone" value={formData.phone} onChange={handleChange} required />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="address">{t("address")} *</Label>
-                  <Input id="address" name="address" value={formData.address} onChange={handleChange} required />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="apartmentNumber">{t("apartmentNumber")}</Label>
-                  <Input
-                    id="apartmentNumber"
-                    name="apartmentNumber"
-                    value={formData.apartmentNumber}
-                    onChange={handleChange}
-                    />
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="city">{t("city")} *</Label>
-                    <Input id="city" name="city" value={formData.city} onChange={handleChange} required />
+                    <Label htmlFor="phone">{t("phoneNumber")} *</Label>
+                    <Input id="phone" name="phone" value={formData.phone} onChange={handleChange} required />
                   </div>
+
                   <div className="space-y-2">
-                    <Label htmlFor="postalCode">{t("postalCode")} *</Label>
+                    <Label htmlFor="address">{t("address")} *</Label>
+                    <Input id="address" name="address" value={formData.address} onChange={handleChange} required />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="apartmentNumber">{t("apartmentNumber")}</Label>
                     <Input
-                      id="postalCode"
-                      name="postalCode"
-                      value={formData.postalCode}
+                      id="apartmentNumber"
+                      name="apartmentNumber"
+                      value={formData.apartmentNumber}
                       onChange={handleChange}
-                      required
+                    />
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="city">{t("city")} *</Label>
+                      <Input id="city" name="city" value={formData.city} onChange={handleChange} required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="postalCode">{t("postalCode")} *</Label>
+                      <Input
+                        id="postalCode"
+                        name="postalCode"
+                        value={formData.postalCode}
+                        onChange={handleChange}
+                        required
                       />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="notes">{t("additionalNotes")}</Label>
+                    <Textarea
+                      id="notes"
+                      name="notes"
+                      value={formData.notes}
+                      onChange={handleChange}
+                      placeholder={t("anySpecialInstructions")}
+                    />
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+
+            <div className="mt-8 flex justify-between">
+              <Button variant="outline" asChild>
+                <Link href="/cart">
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  {t("backToCart")}
+                </Link>
+              </Button>
+            </div>
+          </div>
+
+          <div>
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("orderSummary")}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {cart.map((item) => {
+                    const productName = i18n.language === "sr" ? item.product.nameSr : item.product.nameEn
+                    const itemPrice =
+                      i18n.language === "sr"
+                        ? `${(item.product.priceSr * item.quantity).toLocaleString("sr-RS")} RSD`
+                        : `${(item.product.price * item.quantity).toFixed(2)} €`
+
+                    return (
+                      <div key={item.product.id} className="flex justify-between">
+                        <span>
+                          {productName} × {item.quantity}
+                        </span>
+                        <span>{itemPrice}</span>
+                      </div>
+                    )
+                  })}
+
+                  {/* Promo Code Section */}
+                  <div className="border-t pt-4 mt-4">
+                    <Label htmlFor="promoCode">{t("promoCode")}</Label>
+
+                    {appliedPromo ? (
+                      <div className="mt-2 flex items-center justify-between bg-[#cbff01]/10 p-2 rounded-md">
+                        <div className="flex items-center">
+                          <Tag className="h-4 w-4 mr-2 text-[#cbff01]" />
+                          <span className="font-medium">
+                            {appliedPromo.code} (-{appliedPromo.discount}%)
+                          </span>
+                        </div>
+                        <Button variant="ghost" size="sm" onClick={handleRemovePromoCode} type="button">
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="mt-2 flex gap-2">
+                        <Input
+                          id="promoCode"
+                          name="promoCode"
+                          value={formData.promoCode}
+                          onChange={handleChange}
+                          placeholder={t("enterPromoCode")}
+                          className="flex-1 focus:ring-[#cbff01]"
+                        />
+                        <Button
+                          onClick={handleApplyPromoCode}
+                          disabled={!formData.promoCode || isCheckingPromo}
+                          type="button"
+                          size="sm"
+                        >
+                          {isCheckingPromo ? t("applying") : t("apply")}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="border-t pt-2 mt-2 font-bold flex justify-between">
+                    <span>{t("total")}</span>
+                    <span>{formattedTotalPrice}</span>
                   </div>
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="notes">{t("additionalNotes")}</Label>
-                  <Textarea
-                    id="notes"
-                    name="notes"
-                    value={formData.notes}
-                    onChange={handleChange}
-                    placeholder={t("anySpecialInstructions")}
-                    />
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-
-          <div className="mt-8 flex justify-between">
-            <Button variant="outline" asChild>
-              <Link href="/cart">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                {t("backToCart")}
-              </Link>
-            </Button>
+              </CardContent>
+              <CardFooter>
+                <Button className="w-full" type="submit" form="order-form" disabled={isSubmitting}>
+                  <Send className="mr-2 h-4 w-4" />
+                  {isSubmitting ? t("submitting") : t("order")}
+                </Button>
+              </CardFooter>
+            </Card>
           </div>
         </div>
-
-        <div>
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("orderSummary")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {cart.map((item) => {
-                  const productName = i18n.language === "sr" ? item.product.nameSr : item.product.nameEn
-                  const itemPrice =
-                  i18n.language === "sr"
-                  ? `${(item.product.priceSr * item.quantity).toLocaleString("sr-RS")} RSD`
-                  : `${((item.product.price * item.quantity)).toFixed(2)} €`
-                  
-                  return (
-                    <div key={item.product.id} className="flex justify-between">
-                      <span>
-                        {productName} × {item.quantity}
-                      </span>
-                      <span>{itemPrice}</span>
-                    </div>
-                  )
-                })}
-
-                {/* Promo Code Section */}
-                <div className="border-t pt-4 mt-4">
-                  <Label htmlFor="promoCode">{t("promoCode")}</Label>
-
-                  {appliedPromo ? (
-                    <div className="mt-2 flex items-center justify-between bg-[#cbff01]/10 p-2 rounded-md">
-                      <div className="flex items-center">
-                        <Tag className="h-4 w-4 mr-2 text-[#cbff01]" />
-                        <span className="font-medium">
-                          {appliedPromo.code} (-{appliedPromo.discount}%)
-                        </span>
-                      </div>
-                      <Button variant="ghost" size="sm" onClick={handleRemovePromoCode} type="button">
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="mt-2 flex gap-2">
-                      <Input
-                        id="promoCode"
-                        name="promoCode"
-                        value={formData.promoCode}
-                        onChange={handleChange}
-                        placeholder={t("enterPromoCode")}
-                        className="flex-1 focus:ring-[#cbff01]"
-                        />
-                      <Button
-                        onClick={handleApplyPromoCode}
-                        disabled={!formData.promoCode || isCheckingPromo}
-                        type="button"
-                        size="sm"
-                        >
-                        {isCheckingPromo ? t("applying") : t("apply")}
-                      </Button>
-                    </div>
-                  )}
-                </div>
-
-                <div className="border-t pt-2 mt-2 font-bold flex justify-between">
-                  <span>{t("total")}</span>
-                  <span>{formattedTotalPrice}</span>
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button className="w-full" type="submit" form="order-form" disabled={isSubmitting}>
-                <Send className="mr-2 h-4 w-4" />
-                {isSubmitting ? t("submitting") : t("order")}
-              </Button>
-            </CardFooter>
-          </Card>
-        </div>
       </div>
-    </div>
     </div>
   )
 }
