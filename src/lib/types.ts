@@ -33,6 +33,7 @@ export interface OrderFormData {
   postalCode: string
   notes?: string
   promoCode?: string
+  paymentMethod: string // Added payment method field
 }
 
 /**
@@ -75,6 +76,7 @@ export interface OrderWithItems {
   totalPrice: number
   currency: string
   promoCode?: string | null
+  paymentMethod: string // Added payment method field
   createdAt: string
   items: OrderItem[]
 }

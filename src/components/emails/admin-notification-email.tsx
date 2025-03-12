@@ -5,7 +5,6 @@ import {
   Head,
   Hr,
   Html,
-  Img,
   Link,
   Preview,
   Row,
@@ -42,6 +41,8 @@ export const AdminNotificationEmailTemplate = ({ order, language }: AdminNotific
       orderItems: "Stavke porudžbine",
       quantity: "Količina",
       promoCode: "Promo kod",
+      paymentMethod: "Način plaćanja", // Add this line
+      pouzecem: "Pouzećem", // Add this line
       total: "Ukupno",
       viewOrderDetails: "Pogledaj detalje porudžbine",
       allRightsReserved: "Sva prava zadržana",
@@ -61,6 +62,8 @@ export const AdminNotificationEmailTemplate = ({ order, language }: AdminNotific
       orderItems: "Order Items",
       quantity: "Quantity",
       promoCode: "Promo Code",
+      paymentMethod: "Payment Method", // Add this line
+      pouzecem: "Cash on Delivery", // Add this line
       total: "Total",
       viewOrderDetails: "View Order Details",
       allRightsReserved: "All rights reserved",
@@ -73,6 +76,14 @@ export const AdminNotificationEmailTemplate = ({ order, language }: AdminNotific
   // Format currency based on the order's currency
   const formatPrice = (price: number) => {
     return formatCurrencyBased(price, lang) // Assuming price is stored in cents/paras
+  }
+
+  // Get payment method display text
+  const getPaymentMethodText = () => {
+    if (order.paymentMethod === "pouzecem") {
+      return t.pouzecem
+    }
+    return order.paymentMethod
   }
 
   return (
@@ -92,15 +103,6 @@ export const AdminNotificationEmailTemplate = ({ order, language }: AdminNotific
       <Preview>{t.preview}</Preview>
       <Body style={main}>
         <Container style={container}>
-          <Section style={header}>
-          <Img
-            src="/primary-logo.svg"
-            width="140"
-            height="42"
-            alt="Stripy"
-            style={{ display: "block", margin: "auto" }}
-          />
-          </Section>
           <Section style={section}>
             <Heading style={h1}>{t.newOrder}</Heading>
             <Text style={text}>{t.orderDetails}</Text>
@@ -183,6 +185,14 @@ export const AdminNotificationEmailTemplate = ({ order, language }: AdminNotific
                   </Text>
                 </Column>
               </Row>
+              <Row style={customerInfoRow}>
+                <Column style={customerInfoLabel}>
+                  <Text>{t.paymentMethod}:</Text>
+                </Column>
+                <Column style={customerInfoValue}>
+                  <Text>{getPaymentMethodText()}</Text>
+                </Column>
+              </Row>
               {order.notes && (
                 <Section style={notesSection}>
                   <Text style={notesLabel}>{t.customerNotes}:</Text>
@@ -248,13 +258,6 @@ export const AdminNotificationEmailTemplate = ({ order, language }: AdminNotific
             </Section>
           </Section>
           <Section style={footer}>
-            <Img
-              src={`${process.env.NEXT_PUBLIC_BASE_URL}/primary-logo.svg`}
-              width="100"
-              height="30"
-              alt="Stripy"
-              style={footerLogo}
-            />
             <Text style={footerText}>
               © {new Date().getFullYear()} Stripy. {t.allRightsReserved}.
             </Text>

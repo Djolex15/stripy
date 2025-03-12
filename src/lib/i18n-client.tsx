@@ -235,6 +235,12 @@ const enResources = {
 
     // Currency
     currency: "EUR",
+
+    // Payment related
+    paymentMethod: "Payment Method",
+    pouzecem: "Cash on Delivery",
+    inPerson: "In-Person Pickup",
+    selectPaymentMethod: "Select Payment Method",
   },
 }
 
@@ -483,6 +489,12 @@ const srResources = {
 
     // Currency
     currency: "RSD",
+
+    // Payment related
+    paymentMethod: "Način plaćanja",
+    pouzecem: "Pouzećem",
+    inPerson: "Lično preuzimanje",
+    selectPaymentMethod: "Izaberite način plaćanja",
   },
 }
 

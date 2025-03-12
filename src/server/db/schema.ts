@@ -34,6 +34,7 @@ export const orders = pgTable("orders", {
   totalPrice: integer("total_price").notNull(), // Store in cents/paras
   currency: text("currency").notNull(), // "EUR" or "RSD"
   promoCode: text("promo_code").references(() => promoCodes.code),
+  paymentMethod: text("payment_method").notNull(), // Added payment method field
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
 })
 
@@ -49,4 +50,3 @@ export const orderItems = pgTable("order_items", {
   price: integer("price").notNull(), // Store in cents/paras
   currency: text("currency").notNull(), // "EUR" or "RSD"
 })
-

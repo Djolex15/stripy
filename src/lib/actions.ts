@@ -5,7 +5,7 @@ import { db } from "../server/db"
 import { generateId, trackPromoCodeUsage } from "../lib/query"
 import { orders, orderItems } from "../server/db/schema"
 import { sendOrderConfirmationEmail, sendAdminNotificationEmail } from "./email"
-import Cookies from 'js-cookie'
+import Cookies from "js-cookie"
 
 /**
  * Process an order inquiry, save it to the database, and send confirmation emails
@@ -35,6 +35,7 @@ export async function sendOrderInquiry(orderData: OrderInquiry) {
         totalPrice: totalPriceInt,
         currency,
         promoCode: orderData.appliedPromoCode || null,
+        paymentMethod: orderData.customerInfo.paymentMethod || "pouzecem", // Add payment method with default
         createdAt: new Date().toISOString(),
       })
       .execute()
@@ -48,7 +49,7 @@ export async function sendOrderInquiry(orderData: OrderInquiry) {
 
       // Generate a unique ID for the order item
       const itemId = await generateId()
-      
+
       // Insert the order item into the database
       await db
         .insert(orderItems)
@@ -94,6 +95,7 @@ export async function sendOrderInquiry(orderData: OrderInquiry) {
       totalPrice: totalPriceInt,
       currency,
       promoCode: orderData.appliedPromoCode,
+      paymentMethod: orderData.customerInfo.paymentMethod || "pouzecem", // Add payment method with default
       createdAt: new Date().toISOString(),
       items: orderItemsData,
     }
@@ -107,9 +109,9 @@ export async function sendOrderInquiry(orderData: OrderInquiry) {
     return { success: true, orderId }
   } catch (error) {
     console.error("Failed to process order:", error)
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : String(error) 
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
     }
   }
 }
@@ -161,6 +163,7 @@ export async function sendOrderConfirmationEmails(orderId: string) {
       apartmentNumber: orderResult.apartmentNumber || undefined,
       notes: orderResult.notes || undefined,
       promoCode: orderResult.promoCode || undefined,
+      paymentMethod: orderResult.paymentMethod || "pouzecem", // Add payment method with default
       createdAt: orderResult.createdAt || new Date().toISOString(),
       items: orderItemsResult,
     }
@@ -239,3 +242,4 @@ async function sendEmailsWithFallback(orderWithItems: OrderWithItems) {
     results,
   }
 }
+

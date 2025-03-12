@@ -9,6 +9,7 @@ export interface OrderFormData {
   city: string
   postalCode: string
   notes: string
+  paymentMethod: string
 }
 
 const STORAGE_KEY = "stripy-order-form"

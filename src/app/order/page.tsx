@@ -5,7 +5,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { ArrowLeft, Send, Tag, X } from 'lucide-react'
+import { ArrowLeft, Send, Tag, X } from "lucide-react"
 import Cookies from "js-cookie"
 
 import { Button } from "@/src/components/ui/button"
@@ -19,10 +19,12 @@ import { useTranslation } from "@/src/lib/i18n-client"
 import { sendOrderInquiry } from "@/src/lib/actions"
 import { loadOrderFormData, saveOrderFormData, clearOrderFormData, type OrderFormData } from "@/src/lib/order-storage"
 import { validatePromoCode, type PromoCode } from "@/src/lib/promo-codes"
+import { Checkbox } from "@/components/ui/checkbox"
 
-// Extended OrderFormData to include promo code
+// Add the payment method type to the ExtendedOrderFormData interface
 interface ExtendedOrderFormData extends OrderFormData {
   promoCode: string
+  paymentMethod: string // Add this line
 }
 
 export default function OrderPage() {
@@ -35,7 +37,7 @@ export default function OrderPage() {
   const [appliedPromo, setAppliedPromo] = useState<PromoCode | null>(null)
   const [isCheckingPromo, setIsCheckingPromo] = useState(false)
 
-  // Form state with empty initial values
+  // Update the initial state to include paymentMethod
   const [formData, setFormData] = useState<ExtendedOrderFormData>({
     name: "",
     email: "",
@@ -46,6 +48,7 @@ export default function OrderPage() {
     postalCode: "",
     notes: "",
     promoCode: "",
+    paymentMethod: "pouzecem", // Default to cash on delivery
   })
 
   // Load saved form data on mount
@@ -81,12 +84,6 @@ export default function OrderPage() {
     return null
   }
 
-  // Redirect if cart is empty
-  if (cart.length === 0) {
-    router.push("/")
-    return null
-  }
-
   // Calculate total price based on language
   let totalPrice =
     i18n.language === "sr"
@@ -109,6 +106,11 @@ export default function OrderPage() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const handleCheckboxChange = (checked: boolean) => {
+    // Since we only have one payment method, we'll just set it based on the checkbox
+    setFormData((prev) => ({ ...prev, paymentMethod: "pouzecem" }))
   }
 
   const handleApplyPromoCode = async () => {
@@ -175,26 +177,30 @@ export default function OrderPage() {
       // Get the currency based on language preference from the language switcher
       const currency = i18n.language === "sr" ? "RSD" : "EUR"
 
-      // Send the order with currency information
+      // Update the sendOrderInquiry call to include the payment method
       const result = await sendOrderInquiry({
-        customerInfo: formData,
+        customerInfo: {
+          ...formData,
+          paymentMethod: formData.paymentMethod, // Add this line
+        },
         orderItems: cart,
         totalPrice,
         currency,
         appliedPromoCode: appliedPromo ? appliedPromo.code : undefined,
       })
-      
+
       if (result.success) {
         // Store the order ID in cookies before redirecting
         if (result.orderId) {
           Cookies.set("lastOrderId", result.orderId, { expires: 1 })
-          
+
           // Clear both cart and saved form data on successful order
           clearCart()
           clearOrderFormData()
 
+          console.log("Order submitted successfully")
           // Redirect to the success page with the order ID as a query parameter
-          window.location.href = `/order-success?orderId=${result.orderId}`
+          router.push(`/order-success?orderId=${result.orderId}`)
         } else {
           throw new Error("Order ID not returned from server")
         }
@@ -287,6 +293,19 @@ export default function OrderPage() {
                         onChange={handleChange}
                         required
                       />
+                    </div>
+                  </div>
+
+                  {/* Replace the dropdown with a checkbox */}
+                  <div className="space-y-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="city">{t("paymentMethod")} *</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="paymentMethod" checked={true} onCheckedChange={handleCheckboxChange} />
+                      <Label htmlFor="paymentMethod" className="font-medium">
+                        {t("pouzecem")}
+                      </Label>
                     </div>
                   </div>
 
@@ -401,3 +420,4 @@ const calculateDiscountedPrice = (price: number, discount: number): number => {
   const discountAmount = Math.round(price * (discount / 100))
   return price - discountAmount
 }
+

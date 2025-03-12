@@ -5,7 +5,6 @@ import {
   Head,
   Hr,
   Html,
-  Img,
   Link,
   Preview,
   Row,
@@ -36,6 +35,8 @@ export const OrderConfirmationEmailTemplate = ({ order, language }: OrderConfirm
       orderNumber: "Order",
       quantity: "Quantity",
       promoCode: "Promo Code",
+      paymentMethod: "Payment Method", // Add this line
+      pouzecem: "Cash on Delivery", // Add this line
       total: "Total",
       shippingAddress: "Shipping Address",
       questions: "If you have any questions about your order, please don't hesitate to contact us.",
@@ -53,6 +54,8 @@ export const OrderConfirmationEmailTemplate = ({ order, language }: OrderConfirm
       orderNumber: "Porudžbina",
       quantity: "Količina",
       promoCode: "Promo kod",
+      paymentMethod: "Način plaćanja", // Add this line
+      pouzecem: "Pouzećem", // Add this line
       total: "Ukupno",
       shippingAddress: "Adresa za dostavu",
       questions: "Ako imate bilo kakvih pitanja o vašoj porudžbini, slobodno nas kontaktirajte.",
@@ -69,6 +72,14 @@ export const OrderConfirmationEmailTemplate = ({ order, language }: OrderConfirm
   // Format currency based on the order's currency
   const formatPrice = (price: number) => {
     return formatCurrencyBased(price, lang) // Assuming price is stored in cents/paras
+  }
+
+  // Get payment method display text
+  const getPaymentMethodText = () => {
+    if (order.paymentMethod === "pouzecem") {
+      return t.pouzecem
+    }
+    return order.paymentMethod
   }
 
   return (
@@ -88,15 +99,6 @@ export const OrderConfirmationEmailTemplate = ({ order, language }: OrderConfirm
       <Preview>{t.preview}</Preview>
       <Body style={main}>
         <Container style={container}>
-          <Section style={header}>
-            <Img
-              src={`mystripy.com/primary-logo.svg`}
-              width="140"
-              height="42"
-              alt="Stripy"
-              style={logo}
-            />
-          </Section>
           <Section style={section}>
             <Heading style={h1}>{t.orderConfirmed}</Heading>
             <Text style={text}>{t.greeting}</Text>
@@ -161,6 +163,13 @@ export const OrderConfirmationEmailTemplate = ({ order, language }: OrderConfirm
 
             <Hr style={divider} />
 
+            <Section style={paymentMethodSection}>
+              <Heading as="h2" style={h2}>
+                {t.paymentMethod}
+              </Heading>
+              <Text style={paymentMethodText}>{getPaymentMethodText()}</Text>
+            </Section>
+
             <Section style={shippingSection}>
               <Heading as="h2" style={h2}>
                 {t.shippingAddress}
@@ -184,13 +193,6 @@ export const OrderConfirmationEmailTemplate = ({ order, language }: OrderConfirm
             <Text style={signature}>{t.teamSignature}</Text>
           </Section>
           <Section style={footer}>
-            <Img
-              src={`${process.env.NEXT_PUBLIC_BASE_URL}/primary-logo.svg`}
-              width="100"
-              height="30"
-              alt="Stripy"
-              style={footerLogo}
-            />
             <Text style={footerText}>
               © {new Date().getFullYear()} Stripy. {t.allRightsReserved}.
             </Text>
@@ -347,6 +349,21 @@ const totalValue = {
   color: "#cbff01",
 }
 
+const paymentMethodSection = {
+  margin: "20px 0",
+  backgroundColor: "#212121",
+  padding: "20px",
+  borderRadius: "8px",
+  border: "1px solid #3a3a3a",
+}
+
+const paymentMethodText = {
+  margin: "10px 0",
+  lineHeight: "1.6",
+  color: "#ffffff",
+  fontWeight: "600",
+}
+
 const shippingSection = {
   margin: "20px 0",
   backgroundColor: "#212121",
@@ -377,7 +394,8 @@ const footer = {
 }
 
 const footerLogo = {
-  margin: "0 auto 15px",
+  margin: "0 auto",
+  display: "block",
 }
 
 const footerText = {
