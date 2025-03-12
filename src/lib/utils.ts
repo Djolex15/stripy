@@ -16,3 +16,21 @@ export function formatCurrency(amount: number, language: string): string {
   }
 }
 
+export function formatCurrencyBased(amount: number, currency: string): string {
+  // If currency is RSD, use Serbian formatting
+  if (currency === "RSD") {
+    return `${amount} RSD`
+  }
+  // If currency is sr (language), convert to RSD
+  else if (currency === "sr") {
+    // Convert to RSD for Serbian users
+    return `${amount.toLocaleString("sr-RS")} RSD`
+  }
+  // Default to EUR
+  else {
+    return `${amount.toFixed(2)} €`
+  }
+}
+
+
+

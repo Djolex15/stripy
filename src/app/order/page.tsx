@@ -5,7 +5,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { ArrowLeft, Send, Tag, X } from "lucide-react"
+import { ArrowLeft, Send, Tag, X } from 'lucide-react'
 import Cookies from "js-cookie"
 
 import { Button } from "@/src/components/ui/button"
@@ -183,19 +183,21 @@ export default function OrderPage() {
         currency,
         appliedPromoCode: appliedPromo ? appliedPromo.code : undefined,
       })
-
+      
       if (result.success) {
-        // Clear both cart and saved form data on successful order
-        clearCart()
-        clearOrderFormData()
-
         // Store the order ID in cookies before redirecting
         if (result.orderId) {
           Cookies.set("lastOrderId", result.orderId, { expires: 1 })
-        }
+          
+          // Clear both cart and saved form data on successful order
+          clearCart()
+          clearOrderFormData()
 
-        // Use window.location.href for a full page navigation to ensure the page is fully reloaded
-        window.location.href = `/order-success?orderId=${result.orderId}`
+          // Redirect to the success page with the order ID as a query parameter
+          window.location.href = `/order-success?orderId=${result.orderId}`
+        } else {
+          throw new Error("Order ID not returned from server")
+        }
       } else {
         throw new Error(result.error || "Order submission failed")
       }
@@ -399,4 +401,3 @@ const calculateDiscountedPrice = (price: number, discount: number): number => {
   const discountAmount = Math.round(price * (discount / 100))
   return price - discountAmount
 }
-

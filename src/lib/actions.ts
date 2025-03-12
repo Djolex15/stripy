@@ -5,6 +5,7 @@ import { db } from "../server/db"
 import { generateId, trackPromoCodeUsage } from "../lib/query"
 import { orders, orderItems } from "../server/db/schema"
 import { sendOrderConfirmationEmail, sendAdminNotificationEmail } from "./email"
+import Cookies from 'js-cookie'
 
 /**
  * Process an order inquiry, save it to the database, and send confirmation emails
@@ -97,9 +98,11 @@ export async function sendOrderInquiry(orderData: OrderInquiry) {
       items: orderItemsData,
     }
 
+    Cookies.set("lastOrderId", orderId, { expires: 1 })
+
     // Handle email sending with graceful fallbacks
     await sendEmailsWithFallback(orderWithItems)
-
+    console.log("Confirmation emails sent successfully")
     // Return success with the order ID
     return { success: true, orderId }
   } catch (error) {
@@ -130,9 +133,6 @@ export async function getPromoCodeStats() {
   }
 }
 
-/**
- * Send confirmation emails for an existing order
- */
 export async function sendOrderConfirmationEmails(orderId: string) {
   try {
     // Fetch the order from the database
@@ -141,6 +141,7 @@ export async function sendOrderConfirmationEmails(orderId: string) {
     })
 
     if (!orderResult) {
+      console.error(`Order not found with ID: ${orderId}`)
       return { success: false, error: "Order not found" }
     }
 
@@ -148,6 +149,11 @@ export async function sendOrderConfirmationEmails(orderId: string) {
     const orderItemsResult = await db.query.orderItems.findMany({
       where: (orderItems, { eq }) => eq(orderItems.orderId, orderId),
     })
+
+    if (!orderItemsResult || orderItemsResult.length === 0) {
+      console.error(`No order items found for order ID: ${orderId}`)
+      return { success: false, error: "Order items not found" }
+    }
 
     // Prepare the complete order data
     const orderWithItems: OrderWithItems = {
@@ -160,44 +166,67 @@ export async function sendOrderConfirmationEmails(orderId: string) {
     }
 
     // Send the emails with graceful fallbacks
-    await sendEmailsWithFallback(orderWithItems)
+    const emailResult = await sendEmailsWithFallback(orderWithItems)
+
+    // Log the result for debugging
+    console.log(`Email sending result for order ${orderId}:`, emailResult)
 
     return { success: true }
   } catch (error) {
     console.error("Failed to send order confirmation emails:", error)
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : String(error) 
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
     }
   }
 }
 
-/**
- * Helper function to send emails with proper error handling and fallbacks
- */
 async function sendEmailsWithFallback(orderWithItems: OrderWithItems) {
-  // Skip email sending in development mode or if required environment variables are missing
-  if (process.env.NODE_ENV === "development" || !process.env.RESEND_API_KEY) {
-    console.log("Skipping email sending in development mode or missing API key")
+  // Skip email sending in development mode if explicitly set
+  if (process.env.SKIP_EMAILS === "true") {
+    console.log("Skipping email sending due to SKIP_EMAILS environment variable")
     return { skipped: true }
   }
 
+  // Check if Resend API key is available
+  if (!process.env.RESEND_API_KEY) {
+    console.error("Missing RESEND_API_KEY environment variable")
+    return { error: "Missing API key", skipped: true }
+  }
+
   const emailPromises = []
+  // Define a generic result type that doesn't rely on CreateEmailResponseSuccess
+  const results: {
+    customer: { success: boolean; data?: any; error?: unknown } | null
+    admin: { success: boolean; data?: any; error?: unknown } | null
+  } = { customer: null, admin: null }
 
   // Try to send customer confirmation email
   try {
-    emailPromises.push(sendOrderConfirmationEmail(orderWithItems))
+    const customerEmailPromise = sendOrderConfirmationEmail(orderWithItems)
+    emailPromises.push(
+      customerEmailPromise.then((result) => {
+        results.customer = result
+        return result
+      }),
+    )
   } catch (emailError) {
-    console.error("Error sending customer confirmation email:", emailError)
-    // Continue execution even if customer email fails
+    console.error("Error initiating customer confirmation email:", emailError)
+    results.customer = { success: false, error: emailError }
   }
 
   // Try to send admin notification email
   try {
-    emailPromises.push(sendAdminNotificationEmail(orderWithItems))
+    const adminEmailPromise = sendAdminNotificationEmail(orderWithItems)
+    emailPromises.push(
+      adminEmailPromise.then((result) => {
+        results.admin = result
+        return result
+      }),
+    )
   } catch (emailError) {
-    console.error("Error sending admin notification email:", emailError)
-    // Continue execution even if admin email fails
+    console.error("Error initiating admin notification email:", emailError)
+    results.admin = { success: false, error: emailError }
   }
 
   // Wait for all email attempts to complete
@@ -205,5 +234,8 @@ async function sendEmailsWithFallback(orderWithItems: OrderWithItems) {
     await Promise.allSettled(emailPromises)
   }
 
-  return { sent: true }
+  return {
+    sent: emailPromises.length > 0,
+    results,
+  }
 }
