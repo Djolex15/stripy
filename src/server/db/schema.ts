@@ -85,3 +85,13 @@ export const investorData = pgTable("investor_data", {
   updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`),
 })
 
+// QR codes table
+export const qrCodes = pgTable("qr_codes", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  url: text("url").notNull(),
+  scans: integer("scans").default(0).notNull(),
+  imageData: text("image_data"), // Store base64 encoded image data
+  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text("updated_at").default(sql`CURRENT_TIMESTAMP`),
+})
