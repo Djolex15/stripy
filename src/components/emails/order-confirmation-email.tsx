@@ -100,7 +100,7 @@ export const OrderConfirmationEmailTemplate = ({ order, language }: OrderConfirm
       <Body style={main}>
         <Container style={container}>
           <Section style={header}>
-            <img src="https://mystripy.com/primary-logo.png" alt="Stripy Logo" style={logo} width={140} height={28}/>
+            <img src="https://mystripy.com/primary-logo.png" alt="Stripy Logo" style={logo} width={140} height={40}/>
           </Section>
           <Section style={section}>
             <Heading style={h1}>{t.orderConfirmed}</Heading>
