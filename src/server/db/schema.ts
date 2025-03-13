@@ -50,3 +50,16 @@ export const orderItems = pgTable("order_items", {
   price: integer("price").notNull(), // Store in cents/paras
   currency: text("currency").notNull(), // "EUR" or "RSD"
 })
+
+// Reviews table
+export const reviews = pgTable("reviews", {
+  id: text("id").primaryKey(),
+  productId: text("product_id").notNull(),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  rating: integer("rating").notNull(), // 1-5 star rating
+  comment: text("comment").notNull(),
+  language: text("language").notNull(), // "en" or "sr"
+  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+})
+

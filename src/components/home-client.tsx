@@ -71,38 +71,39 @@ export default function HomeClient() {
   // Benefits data with animations
   const benefits = [
     {
-      icon: <Moon className="h-10 w-10" />,
-      title: t("betterSleep"),
-      description: t("betterSleepDesc"),
+      icon: <Wind className="h-10 w-10" />,
+      title: t("opensAirways"),
+      description: t("opensAirwaysDesc"),
       delay: "0ms",
     },
     {
-      icon: <Wind className="h-10 w-10" />,
-      title: t("reducedSnoring"),
-      description: t("reducedSnoringDesc"),
+      icon: <Moon className="h-10 w-10" />,
+      title: t("reducesSnoring"),
+      description: t("reducesSnoringSleepDesc"),
       delay: "150ms",
     },
     {
       icon: <Zap className="h-10 w-10" />,
-      title: t("easierBreathing"),
-      description: t("easierBreathingDesc"),
+      title: t("maximizesOxygen"),
+      description: t("maximizesOxygenDesc"),
       delay: "300ms",
     },
     {
       icon: <Activity className="h-10 w-10" />,
-      title: t("athleticPerformance"),
-      description: t("athleticPerformanceDesc"),
+      title: t("nonInvasive"),
+      description: t("nonInvasiveDesc"),
       delay: "450ms",
     },
   ]
 
   // FAQ items
   const faqItems = [
-    { id: "item-1", question: t("howDoStripyWork"), answer: t("howDoStripyWorkAnswer") },
-    { id: "item-2", question: t("areStripyComfortable"), answer: t("areStripyComfortableAnswer") },
-    { id: "item-3", question: t("howLongCanIWear"), answer: t("howLongCanIWearAnswer") },
-    { id: "item-4", question: t("canStripyHelpSnoring"), answer: t("canStripyHelpSnoringAnswer") },
-    { id: "item-5", question: t("howDoIApply"), answer: t("howDoIApplyAnswer") },
+    { id: "item-1", question: t("freeShipping"), answer: t("freeShippingAnswer") },
+    { id: "item-2", question: t("safeForDailyUse"), answer: t("safeForDailyUseAnswer") },
+    { id: "item-3", question: t("stayInPlace"), answer: t("stayInPlaceAnswer") },
+    { id: "item-4", question: t("deviated"), answer: t("deviatedAnswer") },
+    { id: "item-5", question: t("howWork"), answer: t("howWorkAnswer") },
+    { id: "item-6", question: t("notDelivered"), answer: t("notDeliveredAnswer") },
   ]
 
   if (!mounted) {
@@ -140,7 +141,7 @@ export default function HomeClient() {
       <header className="fixed top-0 z-50 w-full bg-transparent backdrop-blur-sm height-[80px]">
         <div className="container flex h-16 md:h-20 items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
-            <Image src="/primary-logo.svg" alt="Stripy Logo" width={100} height={20} className="rounded-sm" />
+            <Image src="/primary-logo.svg" alt="Stripy Logo" width={140} height={28} className="rounded-sm" />
           </Link>
           <div className="flex items-center gap-2 md:gap-4">
             <LanguageSwitcher />
@@ -205,7 +206,7 @@ export default function HomeClient() {
         </section>
 
         {/* Oslobodi potencijal */}
-        <section className={"w-full " + (-sectionSpacing)}>
+        <section className={"w-full " + -sectionSpacing}>
           <div className="relative w-full">
             <div className="relative aspect-[16/9] w-full">
               <Image
@@ -222,14 +223,13 @@ export default function HomeClient() {
 
         {/* Science of Breathing Section - NEW SECTION */}
 
-
         {/* Why Use Stripy Section */}
         <section className={`${sectionSpacing} relative overflow-hidden`}>
           {/* No background elements */}
 
           <div className="container relative z-10">
             <div className="text-center max-w-3xl mx-auto mb-8">
-              <h2 className="text-2xl md:text-3xl font-bold tracking-tight sm:text-4xl mb-4">{t("whyUseStripy")}</h2>
+              <h2 className="text-2xl md:text-3xl font-bold tracking-tight sm:text-4xl mb-4">{t("whatStripyDoes")}</h2>
             </div>
 
             <div className="grid gap-6 md:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
@@ -307,49 +307,58 @@ export default function HomeClient() {
       </main>
 
       <footer className="border-t bg-background mt-5">
-        <div className="container py-5">
-          <div className="grid gap-6 md:gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+        <div className="container py-4">
+          <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-3">
             <div>
-              <h3 className="mb-3 md:mb-4 text-base md:text-lg font-semibold">{t("aboutStripy")}</h3>
-              <p className="text-sm md:text-base text-muted-foreground">{t("heroSubtitle")}</p>
+              <h3 className="mb-2 text-base font-semibold">{t("aboutStripy")}</h3>
+              <p className="text-sm text-muted-foreground">{t("aboutStripyNew")}</p>
             </div>
             <div>
-              <h3 className="mb-3 md:mb-4 text-base md:text-lg font-semibold">{t("contactUs")}</h3>
-              <p className="text-sm md:text-base text-muted-foreground">Email: info@mystripy.com</p>
-              <div className="mt-3 md:mt-4 flex gap-3 md:gap-4">
-                <a href="https://www.facebook.com/profile.php?id=61574093874513" className="text-sm md:text-base text-muted-foreground hover:text-foreground">
+              <h3 className="mb-2 text-base font-semibold">{t("contactUs")}</h3>
+              <p className="text-sm text-muted-foreground">Email: info@mystripy.com</p>
+              <div className="mt-2 flex gap-3">
+                <a
+                  href="https://www.facebook.com/profile.php?id=61574093874513"
+                  className="text-sm text-muted-foreground hover:text-foreground"
+                >
                   Facebook
                 </a>
-                <a href="https://www.instagram.com/mystripy/" className="text-sm md:text-base text-muted-foreground hover:text-foreground">
+                <a
+                  href="https://www.instagram.com/mystripy/"
+                  className="text-sm text-muted-foreground hover:text-foreground"
+                >
                   Instagram
                 </a>
-                <a href="https://www.tiktok.com/@mystripy" className="text-sm md:text-base text-muted-foreground hover:text-foreground">
+                <a
+                  href="https://www.tiktok.com/@mystripy"
+                  className="text-sm text-muted-foreground hover:text-foreground"
+                >
                   TikTok
                 </a>
               </div>
             </div>
             <div>
-              <h3 className="mb-3 md:mb-4 text-base md:text-lg font-semibold">{t("quickLinks")}</h3>
-              <ul className="space-y-1 md:space-y-2">
+              <h3 className="mb-2 text-base font-semibold">{t("quickLinks")}</h3>
+              <ul className="space-y-1">
                 <li>
-                  <a href="#products" className="text-sm md:text-base text-muted-foreground hover:text-foreground">
+                  <a href="#products" className="text-sm text-muted-foreground hover:text-foreground">
                     {t("products")}
                   </a>
                 </li>
                 <li>
-                  <a href="/privacy-policy" className="text-sm md:text-base text-muted-foreground hover:text-foreground">
+                  <a href="/privacy-policy" className="text-sm text-muted-foreground hover:text-foreground">
                     {t("privacyPolicy")}
                   </a>
                 </li>
                 <li>
-                  <a href="/terms-of-service" className="text-sm md:text-base text-muted-foreground hover:text-foreground">
+                  <a href="/terms-of-service" className="text-sm text-muted-foreground hover:text-foreground">
                     {t("termsOfService")}
                   </a>
                 </li>
               </ul>
             </div>
           </div>
-          <div className="mt-5 border-t pt-5 text-center text-xs md:text-sm text-muted-foreground">
+          <div className="mt-3 border-t pt-3 text-center text-xs text-muted-foreground">
             <p>
               <a href="https://www.perceptionuae.com" target="_blank" rel="noopener noreferrer">
                 {t("allRightsReserved")} © {currentYear} Perception Creative Agency

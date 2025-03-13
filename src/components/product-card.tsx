@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState } from "react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
@@ -24,7 +26,10 @@ export function ProductCard({ product, featured = false }: ProductCardProps) {
   const router = useRouter()
   const [isAdded, setIsAdded] = useState(false)
 
-  const handleAddToCart = () => {
+  const handleAddToCart = (e: React.MouseEvent) => {
+    // Stop propagation to prevent navigation when clicking the add to cart button
+    e.stopPropagation()
+
     addToCart(product)
     setIsAdded(true)
 
@@ -32,6 +37,10 @@ export function ProductCard({ product, featured = false }: ProductCardProps) {
     setTimeout(() => {
       setIsAdded(false)
     }, 2000)
+  }
+
+  const handleCardClick = () => {
+    router.push(`/product/${product.id}`)
   }
 
   // Get localized product name and description based on current language
@@ -43,7 +52,12 @@ export function ProductCard({ product, featured = false }: ProductCardProps) {
     i18n.language === "sr" ? `${product.priceSr.toLocaleString("sr-RS")} RSD` : `${product.price.toFixed(2)} €`
 
   return (
-    <motion.div whileHover={{ y: featured ? -5 : 0 }} transition={{ type: "spring", stiffness: 300 }}>
+    <motion.div
+      whileHover={{ y: featured ? -5 : 0 }}
+      transition={{ type: "spring", stiffness: 300 }}
+      onClick={handleCardClick}
+      className="cursor-pointer"
+    >
       <Card className={`overflow-hidden ${featured ? "border-[#cbff01] shadow-lg relative scale-105 z-10" : ""}`}>
         {featured && (
           <div className="absolute top-0 right-0 z-10 m-2">
@@ -97,6 +111,7 @@ export function ProductCard({ product, featured = false }: ProductCardProps) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
                 className="w-full"
+                onClick={(e) => e.stopPropagation()} // Prevent card click when clicking this div
               >
                 <Button
                   onClick={handleAddToCart}

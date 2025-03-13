@@ -20,12 +20,14 @@ export default function PrivacyPolicyPage() {
     // Return a simple loading state or skeleton
     return (
       <div className="flex min-h-screen flex-col">
-        <header className="fixed top-0 z-50 w-full bg-[#212121]">
-          <div className="container flex h-20 items-center justify-between">
-            <div className="h-5 w-32 bg-gray-700 rounded-sm"></div>
-            <div className="flex items-center gap-4">
-              <div className="h-8 w-20 bg-gray-700 rounded"></div>
-              <div className="h-8 w-8 bg-gray-700 rounded"></div>
+        <header className="fixed top-0 z-50 w-full bg-transparent backdrop-blur-sm height-[80px]">
+         <div className="container flex h-16 md:h-20 items-center justify-between">
+            <Link href="/" className="flex items-center gap-2">
+              <Image src="/primary-logo.svg" alt="Stripy Logo" width={140} height={28} className="rounded-sm" />
+            </Link>
+            <div className="flex items-center gap-2 md:gap-4">
+              <LanguageSwitcher />
+              <CartButton />
             </div>
           </div>
         </header>

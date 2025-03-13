@@ -3,7 +3,7 @@
 import type { OrderInquiry, OrderWithItems } from "./types"
 import { db } from "../server/db"
 import { generateId, trackPromoCodeUsage } from "../lib/query"
-import { orders, orderItems } from "../server/db/schema"
+import { orders, orderItems, reviews } from "../server/db/schema"
 import { sendOrderConfirmationEmail, sendAdminNotificationEmail } from "./email"
 import Cookies from "js-cookie"
 
@@ -109,6 +109,59 @@ export async function sendOrderInquiry(orderData: OrderInquiry) {
     return { success: true, orderId }
   } catch (error) {
     console.error("Failed to process order:", error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
+    }
+  }
+}
+
+/**
+ * Submit a product review
+ */
+export async function submitReview(reviewData: {
+  productId: string
+  name: string
+  email: string
+  rating: number
+  comment: string
+  language: string
+}) {
+  try {
+    // Generate a unique ID for the review
+    const reviewId = await generateId()
+    const now = new Date().toISOString()
+
+    // Insert the review into the database
+    await db
+      .insert(reviews)
+      .values({
+        id: reviewId,
+        productId: reviewData.productId,
+        name: reviewData.name,
+        email: reviewData.email,
+        rating: reviewData.rating,
+        comment: reviewData.comment,
+        language: reviewData.language,
+        createdAt: now,
+      })
+      .execute()
+
+    // Return the created review
+    return {
+      success: true,
+      review: {
+        id: reviewId,
+        productId: reviewData.productId,
+        name: reviewData.name,
+        rating: reviewData.rating,
+        comment: reviewData.comment,
+        language: reviewData.language,
+        createdAt: now,
+      },
+    }
+  } catch (error) {
+    console.error("Failed to submit review:", error)
     return {
       success: false,
       error: error instanceof Error ? error.message : String(error),

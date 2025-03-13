@@ -40,7 +40,8 @@ const enResources = {
     // Science of Breathing Section
     scienceOfBreathingTitle: "The Science of Breathing, The Art of Performance",
     trainBodyMind: "You train your body. You train your mind. But what about your breath?",
-    topPerformers: "From NBA players to UFC fighters, biohackers to business moguls, the world's top performers know that better breathing = better everything.",
+    topPerformers:
+      "From NBA players to UFC fighters, biohackers to business moguls, the world's top performers know that better breathing = better everything.",
     takeControl: "It's time to take control. To own your air. To breathe like you were meant to.",
     joinMovement: "Join the Stripy movement.",
     everyBreathChoice: "Because every breath is a choice.",
@@ -61,7 +62,8 @@ const enResources = {
     testPackName: "Test Pack (10 Strips)",
     testPackDesc: "Not sure yet? Try it. Feel the difference. One breath is all it takes.",
     monthlyPackName: "Monthly Pack (30 Strips)",
-    monthlyPackDesc: "Your daily upgrade for unstoppable energy, better sleep, and peak performance. One month. A lifetime of better breathing.",
+    monthlyPackDesc:
+      "Your daily upgrade for unstoppable energy, better sleep, and peak performance. One month. A lifetime of better breathing.",
     himHerPackName: "Him & Her Pack (60 Strips)",
     himHerPackDesc: "Because great nights and powerful days shouldn't be a solo mission. Breathe better. Together.",
 
@@ -241,6 +243,27 @@ const enResources = {
     pouzecem: "Cash on Delivery",
     inPerson: "In-Person Pickup",
     selectPaymentMethod: "Select Payment Method",
+    ourRecommendation: "Our Recommendation",
+    mostPopular: "Most Popular",
+    aboutStripyNew: "Join the Stripy movement. Because every breath is a choice, and with Stripy, you choose to win.",
+    freeShipping: "Is shipping free for every order?",
+    freeShippingAnswer:
+      "Yes! Shipping is 100% free when you order the His & Hers Pack - 60 strips. For the other two options, we've ensured the lowest possible shipping cost to make your experience affordable.",
+    safeForDailyUse: "Are Stripy nasal strips safe for daily use?",
+    safeForDailyUseAnswer:
+      "Yes! Stripy is non-invasive and completely safe for daily use. Whether you use them for sleeping, working out, or improving breathing during the day, you can wear them as much as you want.",
+    stayInPlace: "Will the nasal strips stay in place during the night or intense workout?",
+    stayInPlaceAnswer:
+      "Yes! Stripy is made with a strong, skin-friendly adhesive layer that ensures the strip stays in place whether you're sleeping soundly or breaking records at the gym.",
+    deviated: "Can I use nasal strips if I have a deviated septum?",
+    deviatedAnswer:
+      "Yes! While it can't correct a deviated septum, Stripy helps increase airflow and makes breathing easier for people with mild to moderate nasal obstruction.",
+    howWork: "How do nasal strips work?",
+    howWorkAnswer: "Nasal strips gently lift and open the nasal passages, allowing for greater airflow.",
+    notDelivered: "What if my order isn't delivered?",
+    notDeliveredAnswer:
+      "If your order doesn't arrive on time, our support team is here to help. Just contact us, and we'll personally track your shipment, update you on its status, or arrange a quick reshipment if needed. We're always here for you!",
+    whatStripyDoes: "What Stripy Does for You?",
   },
 }
 
@@ -263,21 +286,23 @@ const srResources = {
       "Stripy nosne trake otvaraju tvoje nazalne kanale za bolje disanje, smanjeno hrkanje i bolji kvalitet sna.",
     orderNow: "Poručite odmah",
     ourProducts: "Naši proizvodi",
-    whyUseStripy: "Zašto koristiti Stripy?",
-    betterSleep: "Bolji san",
+    whyUseStripy: "Šta Stripy radi za tebe?",
+    betterSleep: "Poboljšava san",
     betterSleepDesc: "Brže zaspite i uživajte u dubljem, kvalitetnijem snu tokom cele noći.",
-    reducedSnoring: "Smanjeno hrkanje",
-    reducedSnoringDesc: "Otvoreni nosni prolazi smanjuju vibracije koje uzrokuju hrkanje, za vaš i mir vašeg partnera.",
-    easierBreathing: "Lakše disanje",
-    easierBreathingDesc: "Dišite slobodnije kroz nos, posebno tokom prehlade, alergija ili zapušenosti.",
-    athleticPerformance: "Sportske performanse",
-    athleticPerformanceDesc: "Optimizujte disanje tokom fizičkih aktivnosti za poboljšanu izdržljivost i performanse.",
+    reducedSnoring: "Smanjuje hrkanje",
+    reducedSnoringDesc:
+      "Otvoreni disajni putevi ublažavaju vibracije koje uzrokuju hrkanje, za tvoj i mir tvog partnera.",
+    easierBreathing: "Otvara disajne puteve",
+    easierBreathingDesc: "Više kiseonika, više izdržljivosti, više energije.",
+    athleticPerformance: "Poboljšava sportski performans",
+    athleticPerformanceDesc: "Za bolje treninge, oštriji fokus i brži oporavak.",
     faq: "Često postavljana pitanja",
 
     // Science of Breathing Section
     scienceOfBreathingTitle: "Nauka disanja, umetnost performansa",
     trainBodyMind: "Treniraš svoje telo. Treniraš svoj um. Ali šta je sa tvojim dahom?",
-    topPerformers: "Od NBA igrača do UFC boraca, biohakera do poslovnih lidera – najbolji na svetu znaju da bolje disanje znači bolji učinak u svemu.",
+    topPerformers:
+      "Od NBA igrača do UFC boraca, biohakera do poslovnih lidera – najbolji na svetu znaju da bolje disanje znači bolji učinak u svemu.",
     takeControl: "Vreme je da preuzmeš kontrolu. Da ovladaš svojim dahom. Da dišeš onako kako je prirodno.",
     joinMovement: "Pridruži se Stripy pokretu.",
     everyBreathChoice: "Jer svaki dah je izbor.",
@@ -288,8 +313,9 @@ const srResources = {
     opensAirways: "Otvara disajne puteve",
     opensAirwaysDesc: "Više kiseonika, više izdržljivosti, više energije.",
     reducesSnoring: "Smanjuje hrkanje",
-    reducesSnoringSleepDesc: "Tako da ti (i svi oko tebe) možeš spavati kao šampion.",
-    maximizesOxygen: "Maksimizira unos kiseonika",
+    reducesSnoringSleepDesc:
+      "Otvoreni disajni putevi ublažavaju vibracije koje uzrokuju hrkanje, za tvoj i mir tvog partnera.",
+    maximizesOxygen: "Poboljšava sportski performans",
     maximizesOxygenDesc: "Za bolje treninge, oštriji fokus i brži oporavak.",
     nonInvasive: "Neinvazivno i bez lekova",
     nonInvasiveDesc: "Samo čista moć disanja, kad god ti zatreba.",
@@ -298,7 +324,8 @@ const srResources = {
     testPackName: "Test pakovanje (10 traka)",
     testPackDesc: "Nisi siguran? Isprobaj. Oseti razliku već nakon prvog daha.",
     monthlyPackName: "Mesečno pakovanje (30 traka)",
-    monthlyPackDesc: "Tvoj dnevni upgrade za nezaustavljivu energiju, bolji san i vrhunske performanse. Jedan mesec, doživotno bolje disanje.",
+    monthlyPackDesc:
+      "Tvoj dnevni upgrade za nezaustavljivu energiju, bolji san i vrhunske performanse. Jedan mesec, doživotno bolje disanje.",
     himHerPackName: "Him & Her pakovanje (60 traka)",
     himHerPackDesc: "Jer su mirne noći i moćni dani bolji kada su u dvoje. Dišite bolje, zajedno.",
 
@@ -466,6 +493,26 @@ const srResources = {
     tableShowingOf: "od",
     tableShowingTotal: "ukupno",
     tableNoResults: "Nema pronađenih rezultata",
+    mostPopular: "Najpopularnije",
+    ourRecommendation: "Naša preporuka",
+    aboutStripyNew: "Pridruži se Stripy pokretu. Jer svaki dah je izbor, a sa Stripy-jem, biraš pobedu.",
+    freeShipping: "Da li je dostava besplatna za svaku porudžbinu?",
+    freeShippingAnswer:
+      "Da! Dostava je 100% besplatna kada naručiš Pakovanje za Nju i Njega - 60 trakica. Za preostale dve opcije, obezbedili smo što nižu cenu dostave kako bismo tvoje iskustvo učinili pristupačnim.",
+    safeForDailyUse: "Da li su Stripy nosne trakice bezbedne za svakodnevnu upotrebu?",
+    safeForDailyUseAnswer:
+      "Da! Stripy neinvazivan i potpuno bezbedan za svakodnevnu upotrebu. Bilo da ih koristiš za spavanje, trening ili poboljšanje disanja tokom dana, možeš ih nositi koliko god želiš.",
+    stayInPlace: "Da li će nosne trakice ostati na mestu tokom cele noći ili intenzivnog treninga?",
+    stayInPlaceAnswer:
+      "Da! Stripy je napravljen sa jakim, koži prijatnim lepljivim slojem koji osigurava da trakica ostane na mestu bilo da čvrsto spavaš ili obaraš rekorde u teretani.",
+    deviated: "Mogu li koristiti nosne trakice ako imam devijaciju septuma?",
+    deviatedAnswer:
+      "Da! Iako ne može ispraviti devijaciju septuma, Stripy pomaže u povećanju protoka vazduha i olakšava disanje osobama sa blagom do umerenom opstrukcijom nosa.",
+    howWork: "Kako funkcionišu nosne trakice?",
+    howWorkAnswer: "Nosne trakice nežno podižu i otvaraju nosne kanale i omogućavajući veći protok vazduha.",
+    notDelivered: "Šta ako moja porudžbina ne bude isporučena?",
+    notDeliveredAnswer:
+      "Ako tvoja porudžbina ne stigne na vreme, naš tim za podršku je tu da pomogne. Samo nas kontaktiraj, i lično ćemo pratiti tvoju pošiljku, obavestiti te o statusu ili organizovati brzu ponovnu isporuku ako je potrebno. Uvek smo uz tebe!",
 
     // FAQ
     howDoStripyWork: "Kako funkcionišu Stripy nazalne trake?",
@@ -532,3 +579,4 @@ export function useTranslation() {
 }
 
 export default i18n
+
