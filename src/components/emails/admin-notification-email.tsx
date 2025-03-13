@@ -103,6 +103,9 @@ export const AdminNotificationEmailTemplate = ({ order, language }: AdminNotific
       <Preview>{t.preview}</Preview>
       <Body style={main}>
         <Container style={container}>
+          <Section style={header}>
+            <img src="https://mystripy.com/primary-logo.png" alt="Stripy Logo" style={logo} />
+          </Section>
           <Section style={section}>
             <Heading style={h1}>{t.newOrder}</Heading>
             <Text style={text}>{t.orderDetails}</Text>
@@ -259,7 +262,9 @@ export const AdminNotificationEmailTemplate = ({ order, language }: AdminNotific
           </Section>
           <Section style={footer}>
             <Text style={footerText}>
-              © {new Date().getFullYear()} Stripy. {t.allRightsReserved}.
+              <a href="https://www.perceptionuae.com" target="_blank" rel="noopener noreferrer">
+                {t.allRightsReserved} © {new Date().getFullYear()} Perception Creative Agency
+              </a>
             </Text>
           </Section>
         </Container>

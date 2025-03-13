@@ -6,18 +6,19 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Eye, EyeOff } from "lucide-react"
 
-import { Button } from "@/src/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/src/components/ui/input"
-import { Label } from "@/src/components/ui/label"
+import { Label } from "@/components/ui/label"
 import { useToast } from "@/src/hooks/use-toast"
 import { verifyCreatorCredentials, getPromoCodeUsage, getCreatorEarnings, getPromoCodeOrders } from "@/src/lib/query"
+import { createDefaultBusinessData } from "@/src/lib/business-query"
 import { saveCreatorAuth, loadCreatorAuth, clearCreatorAuth } from "@/src/lib/auth-storage"
 import { useMediaQuery } from "@/src/hooks/use-media-query"
 
-import InvestorDashboard from "../admin/investor-dashboard"
-import BusinessOverviewDashboard from "../admin/business-overview-dashboard"
-import CreatorDashboard from "../admin/creator-dashboard"
+import InvestorDashboard from "./investor-dashboard"
+import BusinessOverviewDashboard from "./business-overview-dashboard"
+import CreatorDashboard from "./creator-dashboard"
 
 // Exchange rate - in a real app, this would come from an API
 const EUR_TO_RSD_RATE = 117.5
@@ -35,20 +36,7 @@ export default function AdminPage() {
   const [displayCurrency, setDisplayCurrency] = useState<"EUR" | "RSD">("EUR")
   const isMobile = useMediaQuery("(max-width: 768px)")
 
-  useEffect(() => {
-    setMounted(true)
-    setDisplayCurrency("EUR")
-
-    // Check if user is already authenticated
-    const savedAuth = loadCreatorAuth()
-    if (savedAuth) {
-      setIsAuthenticated(true)
-      setPromoCode(savedAuth.code)
-      setCreatorData(savedAuth)
-      loadCreatorData(savedAuth.code)
-    }
-  }, [])
-
+  // Update the loadCreatorData function to also load business data for special dashboards
   const loadCreatorData = async (code: string) => {
     setIsLoading(true)
     try {
@@ -65,6 +53,11 @@ export default function AdminPage() {
           orders: (ordersData || []).filter((order) => order.createdAt !== null),
         })
       }
+
+      // Initialize business data if needed for special dashboards
+      if (code.toLowerCase() === "investor1" || code.toLowerCase() === "perceptionca") {
+        await initializeBusinessData()
+      }
     } catch (error) {
       console.error("Failed to load data:", error)
       toast({
@@ -76,6 +69,38 @@ export default function AdminPage() {
       setIsLoading(false)
     }
   }
+
+  // Update the initializeBusinessData function to ensure it completes before returning
+  const initializeBusinessData = async () => {
+    try {
+      const result = await createDefaultBusinessData()
+      if (!result.success) {
+        console.error("Failed to initialize business data:", result.error)
+      }
+      return result
+    } catch (error) {
+      console.error("Failed to initialize business data:", error)
+      return { success: false, error }
+    }
+  }
+
+  // Update the useEffect to ensure business data is initialized on mount
+  useEffect(() => {
+    setMounted(true)
+    setDisplayCurrency("EUR")
+
+    // Check if user is already authenticated
+    const savedAuth = loadCreatorAuth()
+    if (savedAuth) {
+      setIsAuthenticated(true)
+      setPromoCode(savedAuth.code)
+      setCreatorData(savedAuth)
+      loadCreatorData(savedAuth.code)
+    }
+
+    // Initialize default business data if needed
+    initializeBusinessData()
+  }, [])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()

@@ -2,12 +2,8 @@ import type React from "react"
 import { CartProvider } from "@/src/lib/cart-context"
 import { ThemeProvider } from "@/src/components/theme-provider"
 import { Toaster } from "@/src/components/ui/toaster"
+import Metadata from "@/src/components/Metadata"
 import "./globals.css"
-
-export const metadata = {
-  title: "Stripy - Breathe Better, Sleep Better",
-  description: "Stripy nasal strips for improved breathing and reduced snoring",
-}
 
 export default function RootLayout({
   children,
@@ -19,6 +15,7 @@ export default function RootLayout({
       <body className="dark">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
           <CartProvider>
+            <Metadata />
             {children}
             <Toaster />
           </CartProvider>
@@ -27,4 +24,3 @@ export default function RootLayout({
     </html>
   )
 }
-

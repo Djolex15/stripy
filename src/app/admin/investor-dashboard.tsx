@@ -1,14 +1,31 @@
 "use client"
 
-import { RefreshCw, LogOut, RotateCw } from "lucide-react"
+import { RefreshCw, LogOut, RotateCw, Edit } from "lucide-react"
+import { useState, useEffect } from "react"
 
-import { Button } from "@/src/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
 import { useMediaQuery } from "@/src/hooks/use-media-query"
 import { getAllPromoCodeUsage, getAllCreatorEarnings } from "@/src/lib/query"
-import { useState, useEffect } from "react"
+import { getInvestorData, updateInvestorData } from "@/src/lib/business-query"
 import { useTranslation } from "@/src/lib/i18n-client"
+import { useToast } from "@/src/hooks/use-toast"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
+import * as z from "zod"
+import type { InvestorData } from "@/src/lib/types"
 
 // Exchange rate - in a real app, this would come from an API
 const EUR_TO_RSD_RATE = 117.5
@@ -22,6 +39,25 @@ interface InvestorDashboardProps {
   onToggleCurrency: () => void
 }
 
+// Form schema for investor data
+const investorFormSchema = z.object({
+  investorName: z.string().min(2, {
+    message: "Investor name must be at least 2 characters.",
+  }),
+  initialInvestment: z.coerce.number().positive({
+    message: "Initial investment must be a positive number.",
+  }),
+  investmentDate: z.string().refine((val) => !isNaN(Date.parse(val)), {
+    message: "Please enter a valid date.",
+  }),
+  ownershipPercentage: z.coerce.number().min(0).max(100, {
+    message: "Ownership percentage must be between 0 and 100.",
+  }),
+  returnPerOrder: z.coerce.number().min(0).max(1, {
+    message: "Return per order must be between 0 and 1 (0% to 100%).",
+  }),
+})
+
 export default function InvestorDashboard({
   creatorData,
   isLoading: isLoadingProp,
@@ -31,21 +67,42 @@ export default function InvestorDashboard({
   onToggleCurrency,
 }: InvestorDashboardProps) {
   const { t } = useTranslation()
+  const { toast } = useToast()
   const isMobile = useMediaQuery("(max-width: 768px)")
   const [isLoading, setIsLoading] = useState(isLoadingProp)
   const [businessData, setBusinessData] = useState<any>(null)
+  const [investorData, setInvestorData] = useState<InvestorData | null>(null)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
 
-  // Investment data - in a real app, this would come from a database
-  const investmentData = {
-    initialInvestment: 10000, // EUR
-    investmentDate: "2023-01-15",
-    ownershipPercentage: 15, // 15% ownership
-    returnPerOrder: 0.05, // 5% of each order
-  }
+  // Form for editing investor data
+  const form = useForm<z.infer<typeof investorFormSchema>>({
+    resolver: zodResolver(investorFormSchema),
+    defaultValues: {
+      investorName: "",
+      initialInvestment: 0,
+      investmentDate: "",
+      ownershipPercentage: 0,
+      returnPerOrder: 0,
+    },
+  })
 
   useEffect(() => {
     loadBusinessData()
+    loadInvestorData()
   }, [])
+
+  // Update form values when investor data changes
+  useEffect(() => {
+    if (investorData) {
+      form.reset({
+        investorName: investorData.investorName,
+        initialInvestment: investorData.initialInvestment,
+        investmentDate: new Date(investorData.investmentDate).toISOString().split("T")[0],
+        ownershipPercentage: investorData.ownershipPercentage,
+        returnPerOrder: investorData.returnPerOrder,
+      })
+    }
+  }, [investorData, form])
 
   const loadBusinessData = async () => {
     setIsLoading(true)
@@ -66,6 +123,86 @@ export default function InvestorDashboard({
     }
   }
 
+  // Update the loadInvestorData function to handle errors better
+  const loadInvestorData = async () => {
+    try {
+      const data = await getInvestorData()
+      if (data) {
+        setInvestorData(data)
+      } else {
+        console.error("No investor data returned")
+        // Create default investor data if none exists
+        await updateInvestorData({
+          id: crypto.randomUUID(),
+          investorName: "Primary Investor",
+          initialInvestment: 10000,
+          investmentDate: new Date("2023-01-15"),
+          ownershipPercentage: 15,
+          returnPerOrder: 0.05,
+        })
+        // Try to load again
+        const retryData = await getInvestorData()
+        if (retryData) {
+          setInvestorData(retryData)
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load investor data:", error)
+    }
+  }
+
+  // Handle form submission
+  const onSubmit = async (values: z.infer<typeof investorFormSchema>) => {
+    try {
+      if (!investorData?.id) return
+
+      await updateInvestorData({
+        id: investorData.id,
+        investorName: values.investorName,
+        initialInvestment: values.initialInvestment,
+        investmentDate: new Date(values.investmentDate),
+        ownershipPercentage: values.ownershipPercentage,
+        returnPerOrder: values.returnPerOrder,
+      })
+
+      // Reload investor data
+      await loadInvestorData()
+
+      toast({
+        title: "Investor data updated",
+        description: "The investor data has been successfully updated.",
+      })
+
+      setIsEditDialogOpen(false)
+    } catch (error) {
+      console.error("Failed to update investor data:", error)
+      toast({
+        title: "Update failed",
+        description: "There was a problem updating the investor data.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  // Format currency based on selected display currency
+  const formatCurrency = (amount: number, originalCurrency = "EUR") => {
+    // Handle null or undefined amounts
+    if (amount === null || amount === undefined) {
+      amount = 0
+    }
+
+    // Convert to the display currency if needed
+    const convertedAmount = convertCurrency(amount, originalCurrency, displayCurrency)
+
+    if (displayCurrency === "RSD") {
+      return `${Math.round(convertedAmount).toLocaleString()} RSD`
+    } else {
+      // If original was in cents, convert to euros
+      const inEuros = Number(convertedAmount) // Ensure it's a number
+      return `€${inEuros.toFixed(2)}`
+    }
+  }
+
   // Convert amount between currencies
   const convertCurrency = (amount: number, fromCurrency: string, toCurrency: string) => {
     if (fromCurrency === toCurrency) return amount
@@ -79,20 +216,6 @@ export default function InvestorDashboard({
     }
 
     return amount
-  }
-
-  // Format currency based on selected display currency
-  const formatCurrency = (amount: number, originalCurrency = "EUR") => {
-    // Convert to the display currency if needed
-    const convertedAmount = convertCurrency(amount, originalCurrency, displayCurrency)
-
-    if (displayCurrency === "RSD") {
-      return `${Math.round(convertedAmount).toLocaleString()} RSD`
-    } else {
-      // If original was in cents, convert to euros
-      const inEuros = originalCurrency === "EUR" ? convertedAmount : convertedAmount
-      return `€${inEuros.toFixed(2)}`
-    }
   }
 
   // Calculate total business revenue
@@ -126,14 +249,23 @@ export default function InvestorDashboard({
 
   // Calculate investor returns
   const calculateInvestorReturns = () => {
+    if (!investorData)
+      return {
+        investorProfit: 0,
+        roi: 0,
+        perOrderReturn: 0,
+        formattedInvestorProfit: formatCurrency(0, "EUR"),
+        formattedPerOrderReturn: formatCurrency(0, "EUR"),
+      }
+
     const businessTotals = calculateBusinessTotals()
 
     // Calculate investor's share of the business
     const businessProfit = businessTotals.totalRevenue - businessTotals.totalAffiliateEarnings
-    const investorProfit = businessProfit * (investmentData.ownershipPercentage / 100)
+    const investorProfit = businessProfit * (investorData.ownershipPercentage / 100)
 
     // Calculate return on investment
-    const roi = (investorProfit / investmentData.initialInvestment) * 100
+    const roi = (investorProfit / investorData.initialInvestment) * 100
 
     // Calculate per-order return
     const perOrderReturn = businessTotals.totalOrders > 0 ? investorProfit / businessTotals.totalOrders : 0
@@ -153,6 +285,17 @@ export default function InvestorDashboard({
   const handleRefresh = () => {
     onRefresh()
     loadBusinessData()
+    loadInvestorData()
+  }
+
+  if (!investorData) {
+    return (
+      <div className="container mx-auto py-4 md:py-8 px-4 min-h-screen">
+        <div className="flex justify-center items-center h-64">
+          <p className="text-muted-foreground">{t("loading")}</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -163,6 +306,94 @@ export default function InvestorDashboard({
           <p className="text-sm md:text-base text-muted-foreground">{t("investmentOverview")}</p>
         </div>
         <div className="flex flex-wrap gap-2 items-center">
+          <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size={isMobile ? "sm" : "default"}>
+                <Edit className="h-4 w-4 mr-1 md:mr-2" />
+                {t("edit")}
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>{t("editInvestorData")}</DialogTitle>
+                <DialogDescription>{t("updateInvestorDataDescription")}</DialogDescription>
+              </DialogHeader>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+                  <FormField
+                    control={form.control}
+                    name="investorName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("investorName")}</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="initialInvestment"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("initialInvestment")} (EUR)</FormLabel>
+                        <FormControl>
+                          <Input type="number" step="0.01" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="investmentDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("investmentDate")}</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="ownershipPercentage"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("ownershipPercentage")} (%)</FormLabel>
+                        <FormControl>
+                          <Input type="number" step="0.01" min="0" max="100" {...field} />
+                        </FormControl>
+                        <FormDescription>{t("percentageOfBusinessOwned")}</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="returnPerOrder"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("returnPerOrderPercentage")}</FormLabel>
+                        <FormControl>
+                          <Input type="number" step="0.01" min="0" max="1" {...field} />
+                        </FormControl>
+                        <FormDescription>{t("percentageReturnPerOrder")}</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <DialogFooter>
+                    <Button type="submit">{t("saveChanges")}</Button>
+                  </DialogFooter>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
           <Button variant="outline" size={isMobile ? "sm" : "default"} onClick={onToggleCurrency}>
             <RotateCw className="h-4 w-4 mr-1 md:mr-2" />
             {displayCurrency === "EUR" ? "RSD" : "EUR"}
@@ -184,9 +415,9 @@ export default function InvestorDashboard({
             <CardTitle className="text-sm md:text-lg">{t("initialInvestment")}</CardTitle>
           </CardHeader>
           <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
-            <p className="text-xl md:text-3xl font-bold">{formatCurrency(investmentData.initialInvestment)}</p>
+            <p className="text-xl md:text-3xl font-bold">{formatCurrency(investorData.initialInvestment)}</p>
             <p className="text-xs text-muted-foreground mt-1">
-              {t("investedOn")} {new Date(investmentData.investmentDate).toLocaleDateString()}
+              {t("investedOn")} {new Date(investorData.investmentDate).toLocaleDateString()}
             </p>
           </CardContent>
         </Card>
@@ -195,7 +426,7 @@ export default function InvestorDashboard({
             <CardTitle className="text-sm md:text-lg">{t("ownershipPercentage")}</CardTitle>
           </CardHeader>
           <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
-            <p className="text-xl md:text-3xl font-bold">{investmentData.ownershipPercentage}%</p>
+            <p className="text-xl md:text-3xl font-bold">{investorData.ownershipPercentage}%</p>
             <p className="text-xs text-muted-foreground mt-1">{t("ofTotalBusinessEquity")}</p>
           </CardContent>
         </Card>
@@ -266,7 +497,7 @@ export default function InvestorDashboard({
                 </div>
                 <div>
                   <h4 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">
-                    {t("yourShare")} ({investmentData.ownershipPercentage}%)
+                    {t("yourShare")} ({investorData.ownershipPercentage}%)
                   </h4>
                   <p className="text-base md:text-lg font-semibold">{investorReturns.formattedInvestorProfit}</p>
                 </div>
@@ -314,7 +545,7 @@ export default function InvestorDashboard({
                         const orderAmountInEUR =
                           order.currency === "RSD" ? order.totalPrice / EUR_TO_RSD_RATE : order.totalPrice
                         const investorReturn =
-                          orderAmountInEUR * (investmentData.ownershipPercentage / 100) * investmentData.returnPerOrder
+                          orderAmountInEUR * (investorData.ownershipPercentage / 100) * investorData.returnPerOrder
 
                         return (
                           <tr key={order.id}>

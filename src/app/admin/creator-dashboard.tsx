@@ -2,8 +2,8 @@
 
 import { RefreshCw, LogOut, RotateCw } from "lucide-react"
 
-import { Button } from "@/src/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useMediaQuery } from "@/src/hooks/use-media-query"
 
 // Exchange rate - in a real app, this would come from an API
@@ -45,6 +45,11 @@ export default function CreatorDashboard({
 
   // Format currency based on selected display currency
   const formatCurrency = (amount: number, originalCurrency = "EUR") => {
+    // Handle null or undefined amounts
+    if (amount === null || amount === undefined) {
+      amount = 0
+    }
+
     // Convert to the display currency if needed
     const convertedAmount = convertCurrency(amount, originalCurrency, displayCurrency)
 
@@ -52,7 +57,7 @@ export default function CreatorDashboard({
       return `${Math.round(convertedAmount).toLocaleString()} RSD`
     } else {
       // If original was in cents, convert to euros
-      const inEuros = originalCurrency === "EUR" ? convertedAmount : convertedAmount
+      const inEuros = Number(convertedAmount) // Ensure it's a number
       return `€${inEuros.toFixed(2)}`
     }
   }

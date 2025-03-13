@@ -92,3 +92,29 @@ export interface PromoCode {
   createdAt: string
 }
 
+/**
+ * Business metrics data structure
+ */
+export interface BusinessMetricsData {
+  id: string
+  initialInvestment: number // In EUR
+  investmentDate: Date
+  operatingCosts: number // Monthly operating costs in EUR
+  investorPercentage: number // Percentage that goes to investors
+  affiliatePercentage: number // Average percentage to affiliates
+  updatedAt: Date
+}
+
+/**
+ * Investor data structure
+ */
+export interface InvestorData {
+  id: string
+  investorName: string
+  initialInvestment: number // In EUR
+  investmentDate: Date
+  ownershipPercentage: number // Percentage ownership
+  returnPerOrder: number // Percentage return per order
+  updatedAt: Date
+}
+

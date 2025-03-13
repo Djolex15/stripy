@@ -19,7 +19,7 @@ const enResources = {
     itemAddedToCart: "Item added to cart!",
 
     // Landing page sections
-    heroTitle: "Choose Your Breath. Own Your Performance.",
+    heroTitle: "Breathe better. Live better",
     heroSubtitle:
       "Stripy nasal strips open your nasal passages for improved breathing, reduced snoring, and better sleep quality.",
     orderNow: "Order Now",
@@ -311,6 +311,27 @@ const enResources = {
     businessMetricsAndHealth: "Key performance indicators and business health",
     profitMargin: "Profit Margin",
     averageOrderValue: "Average Order Value",
+
+    // Add these new translation keys to both English and Serbian resources
+    edit: "Edit",
+    editInvestorData: "Edit Investor Data",
+    updateInvestorDataDescription: "Update the investor information and metrics",
+    investorName: "Investor Name",
+    investmentDate: "Investment Date",
+    percentageOfBusinessOwned: "Percentage of business owned",
+    returnPerOrderPercentage: "Return Per Order",
+    percentageReturnPerOrder: "Percentage return per order (0-1)",
+    saveChanges: "Save Changes",
+    from: "From",
+    orders: "orders",
+    afterOperatingCosts: "After operating costs",
+    editBusinessMetrics: "Edit Business Metrics",
+    updateBusinessMetricsDescription: "Update the business metrics and financial data",
+    monthlyOperatingCosts: "Monthly Operating Costs",
+    investorPercentage: "Investor Percentage",
+    percentageToInvestors: "Percentage that goes to investors",
+    affiliatePercentage: "Affiliate Percentage",
+    averagePercentageToAffiliates: "Average percentage to affiliates",
   },
 }
 
@@ -328,7 +349,7 @@ const srResources = {
     itemAddedToCart: "Proizvod dodat u korpu!",
 
     // Landing page sections
-    heroTitle: "Izaberi svoj dah. Ostvari svoj performans.",
+    heroTitle: "Diši bolje. Živi punim plućima.",
     heroSubtitle:
       "Stripy nosne trake otvaraju tvoje nazalne kanale za bolje disanje, smanjeno hrkanje i bolji kvalitet sna.",
     orderNow: "Poručite odmah",
@@ -637,6 +658,27 @@ const srResources = {
     profitMargin: "Profitna Marža",
     averageOrderValue: "Prosečna Vrednost Porudžbine",
     whatStripyDoes: "Šta Stripy radi za tebe?",
+
+    // Add these new translation keys to both English and Serbian resources
+    edit: "Izmeni",
+    editInvestorData: "Izmeni Podatke Investitora",
+    updateInvestorDataDescription: "Ažurirajte informacije i metrike investitora",
+    investorName: "Ime Investitora",
+    investmentDate: "Datum Investicije",
+    percentageOfBusinessOwned: "Procenat vlasništva u firmi",
+    returnPerOrderPercentage: "Povrat Po Porudžbini",
+    percentageReturnPerOrder: "Procenat povrata po porudžbini (0-1)",
+    saveChanges: "Sačuvaj Promene",
+    from: "Od",
+    orders: "porudžbina",
+    afterOperatingCosts: "Nakon operativnih troškova",
+    editBusinessMetrics: "Izmeni Poslovne Metrike",
+    updateBusinessMetricsDescription: "Ažurirajte poslovne metrike i finansijske podatke",
+    monthlyOperatingCosts: "Mesečni Operativni Troškovi",
+    investorPercentage: "Procenat Investitora",
+    percentageToInvestors: "Procenat koji ide investitorima",
+    affiliatePercentage: "Procenat Saradnika",
+    averagePercentageToAffiliates: "Prosečan procenat za saradnike",
   },
 }
 

@@ -1,14 +1,31 @@
 "use client"
 
-import { RefreshCw, LogOut, RotateCw } from "lucide-react"
+import { RefreshCw, LogOut, RotateCw, Edit } from "lucide-react"
+import { useState, useEffect } from "react"
 
-import { Button } from "@/src/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
 import { useMediaQuery } from "@/src/hooks/use-media-query"
 import { getAllPromoCodeUsage, getAllCreatorEarnings } from "@/src/lib/query"
-import { useState, useEffect } from "react"
+import { getBusinessMetrics, updateBusinessMetrics } from "@/src/lib/business-query"
 import { useTranslation } from "@/src/lib/i18n-client"
+import { useToast } from "@/src/hooks/use-toast"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
+import * as z from "zod"
+import type { BusinessMetricsData } from "@/src/lib/types"
 
 // Exchange rate - in a real app, this would come from an API
 const EUR_TO_RSD_RATE = 117.5
@@ -22,6 +39,42 @@ interface BusinessOverviewDashboardProps {
   onToggleCurrency: () => void
 }
 
+// Form schema for business metrics
+const businessFormSchema = z.object({
+  initialInvestment: z.coerce.number().positive({
+    message: "Initial investment must be a positive number.",
+  }),
+  investmentDate: z.string().refine((val) => !isNaN(Date.parse(val)), {
+    message: "Please enter a valid date.",
+  }),
+  operatingCosts: z.coerce.number().positive({
+    message: "Operating costs must be a positive number.",
+  }),
+  investorPercentage: z.coerce.number().min(0).max(100, {
+    message: "Investor percentage must be between 0 and 100.",
+  }),
+  affiliatePercentage: z.coerce.number().min(0).max(100, {
+    message: "Affiliate percentage must be between 0 and 100.",
+  }),
+})
+
+// Function to convert currency
+const convertCurrency = (amount: number, fromCurrency: string, toCurrency: string): number => {
+  if (fromCurrency === toCurrency) {
+    return amount
+  }
+
+  if (fromCurrency === "EUR" && toCurrency === "RSD") {
+    return amount * EUR_TO_RSD_RATE
+  }
+
+  if (fromCurrency === "RSD" && toCurrency === "EUR") {
+    return amount / EUR_TO_RSD_RATE
+  }
+
+  return amount // Or handle other conversions as needed
+}
+
 export default function BusinessOverviewDashboard({
   creatorData,
   isLoading: isLoadingProp,
@@ -31,21 +84,42 @@ export default function BusinessOverviewDashboard({
   onToggleCurrency,
 }: BusinessOverviewDashboardProps) {
   const { t } = useTranslation()
+  const { toast } = useToast()
   const isMobile = useMediaQuery("(max-width: 768px)")
   const [isLoading, setIsLoading] = useState(isLoadingProp)
   const [businessData, setBusinessData] = useState<any>(null)
+  const [businessMetricsData, setBusinessMetricsData] = useState<BusinessMetricsData | null>(null)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
 
-  // Business data - in a real app, this would come from a database
-  const businessMetrics = {
-    initialInvestment: 25000, // EUR
-    operatingCosts: 1500, // Monthly operating costs in EUR
-    investorPercentage: 15, // 15% goes to investors
-    affiliatePercentage: 10, // 10% average to affiliates
-  }
+  // Form for editing business metrics
+  const form = useForm<z.infer<typeof businessFormSchema>>({
+    resolver: zodResolver(businessFormSchema),
+    defaultValues: {
+      initialInvestment: 0,
+      investmentDate: "",
+      operatingCosts: 0,
+      investorPercentage: 0,
+      affiliatePercentage: 0,
+    },
+  })
 
   useEffect(() => {
     loadBusinessData()
+    loadBusinessMetrics()
   }, [])
+
+  // Update form values when business metrics change
+  useEffect(() => {
+    if (businessMetricsData) {
+      form.reset({
+        initialInvestment: businessMetricsData.initialInvestment,
+        investmentDate: new Date(businessMetricsData.investmentDate).toISOString().split("T")[0],
+        operatingCosts: businessMetricsData.operatingCosts,
+        investorPercentage: businessMetricsData.investorPercentage,
+        affiliatePercentage: businessMetricsData.affiliatePercentage,
+      })
+    }
+  }, [businessMetricsData, form])
 
   const loadBusinessData = async () => {
     setIsLoading(true)
@@ -66,23 +140,70 @@ export default function BusinessOverviewDashboard({
     }
   }
 
-  // Convert amount between currencies
-  const convertCurrency = (amount: number, fromCurrency: string, toCurrency: string) => {
-    if (fromCurrency === toCurrency) return amount
-
-    if (fromCurrency === "EUR" && toCurrency === "RSD") {
-      // Convert from EUR to RSD
-      return amount * EUR_TO_RSD_RATE
-    } else if (fromCurrency === "RSD" && toCurrency === "EUR") {
-      // Convert from RSD to EUR
-      return amount / EUR_TO_RSD_RATE
+  // Update the loadBusinessMetrics function to handle errors better
+  const loadBusinessMetrics = async () => {
+    try {
+      const data = await getBusinessMetrics()
+      if (data) {
+        setBusinessMetricsData(data)
+      } else {
+        console.error("No business metrics data returned")
+        // Create default data if none exists
+        await updateBusinessMetrics({
+          initialInvestment: 25000,
+          investmentDate: new Date("2023-01-01"),
+          operatingCosts: 1500,
+          investorPercentage: 15,
+          affiliatePercentage: 10,
+        })
+        // Try to load again
+        const retryData = await getBusinessMetrics()
+        if (retryData) {
+          setBusinessMetricsData(retryData)
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load business metrics:", error)
     }
+  }
 
-    return amount
+  // Handle form submission
+  const onSubmit = async (values: z.infer<typeof businessFormSchema>) => {
+    try {
+      await updateBusinessMetrics({
+        initialInvestment: values.initialInvestment,
+        investmentDate: new Date(values.investmentDate),
+        operatingCosts: values.operatingCosts,
+        investorPercentage: values.investorPercentage,
+        affiliatePercentage: values.affiliatePercentage,
+      })
+
+      // Reload business metrics
+      await loadBusinessMetrics()
+
+      toast({
+        title: "Business metrics updated",
+        description: "The business metrics have been successfully updated.",
+      })
+
+      setIsEditDialogOpen(false)
+    } catch (error) {
+      console.error("Failed to update business metrics:", error)
+      toast({
+        title: "Update failed",
+        description: "There was a problem updating the business metrics.",
+        variant: "destructive",
+      })
+    }
   }
 
   // Format currency based on selected display currency
   const formatCurrency = (amount: number, originalCurrency = "EUR") => {
+    // Handle null or undefined amounts
+    if (amount === null || amount === undefined) {
+      amount = 0
+    }
+
     // Convert to the display currency if needed
     const convertedAmount = convertCurrency(amount, originalCurrency, displayCurrency)
 
@@ -90,14 +211,14 @@ export default function BusinessOverviewDashboard({
       return `${Math.round(convertedAmount).toLocaleString()} RSD`
     } else {
       // If original was in cents, convert to euros
-      const inEuros = originalCurrency === "EUR" ? convertedAmount : convertedAmount
+      const inEuros = Number(convertedAmount) // Ensure it's a number
       return `€${inEuros.toFixed(2)}`
     }
   }
 
   // Calculate total business metrics
   const calculateBusinessMetrics = () => {
-    if (!businessData?.creatorEarnings) {
+    if (!businessData?.creatorEarnings || !businessMetricsData) {
       return {
         totalRevenue: 0,
         totalOrders: 0,
@@ -106,6 +227,7 @@ export default function BusinessOverviewDashboard({
         netProfit: 0,
         investorEarnings: 0,
         companyProfit: 0,
+        operatingCosts: 0,
       }
     }
 
@@ -121,11 +243,11 @@ export default function BusinessOverviewDashboard({
 
     // Calculate profits
     const grossProfit = totalRevenue - totalAffiliateEarnings
-    const operatingCosts = businessMetrics.operatingCosts * 6 // Assuming 6 months of operation
+    const operatingCosts = businessMetricsData.operatingCosts * 6 // Assuming 6 months of operation
     const netProfit = grossProfit - operatingCosts
 
     // Calculate earnings distribution
-    const investorEarnings = netProfit * (businessMetrics.investorPercentage / 100)
+    const investorEarnings = netProfit * (businessMetricsData.investorPercentage / 100)
     const companyProfit = netProfit - investorEarnings
 
     return {
@@ -147,11 +269,22 @@ export default function BusinessOverviewDashboard({
     }
   }
 
-  const businessMetricsData = calculateBusinessMetrics()
+  const businessMetrics = calculateBusinessMetrics()
 
   const handleRefresh = () => {
     onRefresh()
     loadBusinessData()
+    loadBusinessMetrics()
+  }
+
+  if (!businessMetricsData) {
+    return (
+      <div className="container mx-auto py-4 md:py-8 px-4 min-h-screen">
+        <div className="flex justify-center items-center h-64">
+          <p className="text-muted-foreground">{t("loading")}</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -162,6 +295,94 @@ export default function BusinessOverviewDashboard({
           <p className="text-sm md:text-base text-muted-foreground">{t("completeBusinessPerformance")}</p>
         </div>
         <div className="flex flex-wrap gap-2 items-center">
+          <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size={isMobile ? "sm" : "default"}>
+                <Edit className="h-4 w-4 mr-1 md:mr-2" />
+                {t("edit")}
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>{t("editBusinessMetrics")}</DialogTitle>
+                <DialogDescription>{t("updateBusinessMetricsDescription")}</DialogDescription>
+              </DialogHeader>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+                  <FormField
+                    control={form.control}
+                    name="initialInvestment"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("initialInvestment")} (EUR)</FormLabel>
+                        <FormControl>
+                          <Input type="number" step="0.01" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="investmentDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("investmentDate")}</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="operatingCosts"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("monthlyOperatingCosts")} (EUR)</FormLabel>
+                        <FormControl>
+                          <Input type="number" step="0.01" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="investorPercentage"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("investorPercentage")} (%)</FormLabel>
+                        <FormControl>
+                          <Input type="number" step="0.01" min="0" max="100" {...field} />
+                        </FormControl>
+                        <FormDescription>{t("percentageToInvestors")}</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="affiliatePercentage"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("affiliatePercentage")} (%)</FormLabel>
+                        <FormControl>
+                          <Input type="number" step="0.01" min="0" max="100" {...field} />
+                        </FormControl>
+                        <FormDescription>{t("averagePercentageToAffiliates")}</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <DialogFooter>
+                    <Button type="submit">{t("saveChanges")}</Button>
+                  </DialogFooter>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
           <Button variant="outline" size={isMobile ? "sm" : "default"} onClick={onToggleCurrency}>
             <RotateCw className="h-4 w-4 mr-1 md:mr-2" />
             {displayCurrency === "EUR" ? "RSD" : "EUR"}
@@ -183,9 +404,9 @@ export default function BusinessOverviewDashboard({
             <CardTitle className="text-sm md:text-lg">{t("totalRevenue")}</CardTitle>
           </CardHeader>
           <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
-            <p className="text-xl md:text-3xl font-bold">{businessMetricsData.formattedTotalRevenue}</p>
+            <p className="text-xl md:text-3xl font-bold">{businessMetrics.formattedTotalRevenue}</p>
             <p className="text-xs text-muted-foreground mt-1">
-              {t("from")} {businessMetricsData.totalOrders} {t("orders")}
+              {t("from")} {businessMetrics.totalOrders} {t("orders")}
             </p>
           </CardContent>
         </Card>
@@ -194,7 +415,7 @@ export default function BusinessOverviewDashboard({
             <CardTitle className="text-sm md:text-lg">{t("grossProfit")}</CardTitle>
           </CardHeader>
           <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
-            <p className="text-xl md:text-3xl font-bold">{businessMetricsData.formattedGrossProfit}</p>
+            <p className="text-xl md:text-3xl font-bold">{businessMetrics.formattedGrossProfit}</p>
             <p className="text-xs text-muted-foreground mt-1">{t("afterAffiliatePayouts")}</p>
           </CardContent>
         </Card>
@@ -203,7 +424,7 @@ export default function BusinessOverviewDashboard({
             <CardTitle className="text-sm md:text-lg">{t("netProfit")}</CardTitle>
           </CardHeader>
           <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
-            <p className="text-xl md:text-3xl font-bold">{businessMetricsData.formattedNetProfit}</p>
+            <p className="text-xl md:text-3xl font-bold">{businessMetrics.formattedNetProfit}</p>
             <p className="text-xs text-muted-foreground mt-1">{t("afterOperatingCosts")}</p>
           </CardContent>
         </Card>
@@ -212,7 +433,7 @@ export default function BusinessOverviewDashboard({
             <CardTitle className="text-sm md:text-lg">{t("companyProfit")}</CardTitle>
           </CardHeader>
           <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
-            <p className="text-xl md:text-3xl font-bold">{businessMetricsData.formattedCompanyProfit}</p>
+            <p className="text-xl md:text-3xl font-bold">{businessMetrics.formattedCompanyProfit}</p>
             <p className="text-xs text-muted-foreground mt-1">{t("afterInvestorPayouts")}</p>
           </CardContent>
         </Card>
@@ -228,39 +449,39 @@ export default function BusinessOverviewDashboard({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
               <div>
                 <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">{t("totalRevenue")}</h3>
-                <p className="text-lg md:text-2xl font-semibold">{businessMetricsData.formattedTotalRevenue}</p>
+                <p className="text-lg md:text-2xl font-semibold">{businessMetrics.formattedTotalRevenue}</p>
               </div>
               <div>
                 <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">{t("affiliatePayouts")}</h3>
-                <p className="text-lg md:text-2xl font-semibold">
-                  - {businessMetricsData.formattedTotalAffiliateEarnings}
-                </p>
+                <p className="text-lg md:text-2xl font-semibold">- {businessMetrics.formattedTotalAffiliateEarnings}</p>
               </div>
               <div>
                 <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">{t("grossProfit")}</h3>
-                <p className="text-lg md:text-2xl font-semibold">{businessMetricsData.formattedGrossProfit}</p>
+                <p className="text-lg md:text-2xl font-semibold">{businessMetrics.formattedGrossProfit}</p>
               </div>
               <div>
                 <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">{t("operatingCosts")}</h3>
-                <p className="text-lg md:text-2xl font-semibold">- {businessMetricsData.formattedOperatingCosts}</p>
+                <p className="text-lg md:text-2xl font-semibold">- {businessMetrics.formattedOperatingCosts}</p>
               </div>
               <div>
                 <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">{t("netProfit")}</h3>
-                <p className="text-lg md:text-2xl font-semibold">{businessMetricsData.formattedNetProfit}</p>
+                <p className="text-lg md:text-2xl font-semibold">{businessMetrics.formattedNetProfit}</p>
               </div>
               <div>
                 <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">
-                  {t("investorEarnings")} ({businessMetrics.investorPercentage}%)
+                  {t("investorEarnings")} ({businessMetricsData.investorPercentage}%)
                 </h3>
-                <p className="text-lg md:text-2xl font-semibold">- {businessMetricsData.formattedInvestorEarnings}</p>
+                <p className="text-lg md:text-2xl font-semibold">- {businessMetrics.formattedInvestorEarnings}</p>
               </div>
               <div>
                 <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">{t("companyProfit")}</h3>
-                <p className="text-lg md:text-2xl font-semibold">{businessMetricsData.formattedCompanyProfit}</p>
+                <p className="text-lg md:text-2xl font-semibold">{businessMetrics.formattedCompanyProfit}</p>
               </div>
               <div>
                 <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">{t("initialInvestment")}</h3>
-                <p className="text-lg md:text-2xl font-semibold">{formatCurrency(businessMetrics.initialInvestment)}</p>
+                <p className="text-lg md:text-2xl font-semibold">
+                  {formatCurrency(businessMetricsData.initialInvestment)}
+                </p>
               </div>
             </div>
 
@@ -274,14 +495,10 @@ export default function BusinessOverviewDashboard({
                     <CardTitle className="text-sm md:text-base">{t("affiliatePayouts")}</CardTitle>
                   </CardHeader>
                   <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
-                    <p className="text-lg md:text-xl font-bold">
-                      {businessMetricsData.formattedTotalAffiliateEarnings}
-                    </p>
+                    <p className="text-lg md:text-xl font-bold">{businessMetrics.formattedTotalAffiliateEarnings}</p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {((businessMetricsData.totalAffiliateEarnings / businessMetricsData.totalRevenue) * 100).toFixed(
-                        1,
-                      )}
-                      % {t("ofRevenue")}
+                      {((businessMetrics.totalAffiliateEarnings / businessMetrics.totalRevenue) * 100).toFixed(1)}%{" "}
+                      {t("ofRevenue")}
                     </p>
                   </CardContent>
                 </Card>
@@ -290,9 +507,9 @@ export default function BusinessOverviewDashboard({
                     <CardTitle className="text-sm md:text-base">{t("investorEarnings")}</CardTitle>
                   </CardHeader>
                   <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
-                    <p className="text-lg md:text-xl font-bold">{businessMetricsData.formattedInvestorEarnings}</p>
+                    <p className="text-lg md:text-xl font-bold">{businessMetrics.formattedInvestorEarnings}</p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {businessMetrics.investorPercentage}% {t("ofNetProfit")}
+                      {businessMetricsData.investorPercentage}% {t("ofNetProfit")}
                     </p>
                   </CardContent>
                 </Card>
@@ -301,9 +518,9 @@ export default function BusinessOverviewDashboard({
                     <CardTitle className="text-sm md:text-base">{t("companyProfit")}</CardTitle>
                   </CardHeader>
                   <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
-                    <p className="text-lg md:text-xl font-bold">{businessMetricsData.formattedCompanyProfit}</p>
+                    <p className="text-lg md:text-xl font-bold">{businessMetrics.formattedCompanyProfit}</p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {100 - businessMetrics.investorPercentage}% {t("ofNetProfit")}
+                      {100 - businessMetricsData.investorPercentage}% {t("ofNetProfit")}
                     </p>
                   </CardContent>
                 </Card>
@@ -369,9 +586,9 @@ export default function BusinessOverviewDashboard({
                         <td colSpan={3} className="py-2 px-2 text-right">
                           {t("totalLabel")}
                         </td>
-                        <td className="py-2 px-2">{businessMetricsData.totalOrders}</td>
-                        <td className="py-2 px-2">{businessMetricsData.formattedTotalRevenue}</td>
-                        <td className="py-2 px-2">{businessMetricsData.formattedTotalAffiliateEarnings}</td>
+                        <td className="py-2 px-2">{businessMetrics.totalOrders}</td>
+                        <td className="py-2 px-2">{businessMetrics.formattedTotalRevenue}</td>
+                        <td className="py-2 px-2">{businessMetrics.formattedTotalAffiliateEarnings}</td>
                       </tr>
                     </tfoot>
                   </table>
@@ -395,24 +612,24 @@ export default function BusinessOverviewDashboard({
               <div>
                 <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">{t("roi")}</h3>
                 <p className="text-lg md:text-2xl font-semibold">
-                  {businessMetricsData.netProfit > 0
-                    ? `${((businessMetricsData.netProfit / businessMetrics.initialInvestment) * 100).toFixed(1)}%`
+                  {businessMetrics.netProfit > 0
+                    ? `${((businessMetrics.netProfit / businessMetricsData.initialInvestment) * 100).toFixed(1)}%`
                     : "0%"}
                 </p>
               </div>
               <div>
                 <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">{t("profitMargin")}</h3>
                 <p className="text-lg md:text-2xl font-semibold">
-                  {businessMetricsData.totalRevenue > 0
-                    ? `${((businessMetricsData.netProfit / businessMetricsData.totalRevenue) * 100).toFixed(1)}%`
+                  {businessMetrics.totalRevenue > 0
+                    ? `${((businessMetrics.netProfit / businessMetrics.totalRevenue) * 100).toFixed(1)}%`
                     : "0%"}
                 </p>
               </div>
               <div>
                 <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">{t("averageOrderValue")}</h3>
                 <p className="text-lg md:text-2xl font-semibold">
-                  {businessMetricsData.totalOrders > 0
-                    ? formatCurrency(businessMetricsData.totalRevenue / businessMetricsData.totalOrders, "EUR")
+                  {businessMetrics.totalOrders > 0
+                    ? formatCurrency(businessMetrics.totalRevenue / businessMetrics.totalOrders, "EUR")
                     : formatCurrency(0, "EUR")}
                 </p>
               </div>

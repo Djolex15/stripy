@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm"
-import { pgTable, text, integer } from "drizzle-orm/pg-core"
+import { pgTable, text, integer, decimal, timestamp } from "drizzle-orm/pg-core"
 
 // Promo codes table
 export const promoCodes = pgTable("promo_codes", {
@@ -61,5 +61,27 @@ export const reviews = pgTable("reviews", {
   comment: text("comment").notNull(),
   language: text("language").notNull(), // "en" or "sr"
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+})
+
+// Business metrics table
+export const businessMetrics = pgTable("business_metrics", {
+  id: text("id").primaryKey(),
+  initialInvestment: decimal("initial_investment").notNull(), // In EUR
+  investmentDate: timestamp("investment_date").notNull(),
+  operatingCosts: decimal("operating_costs").notNull(), // Monthly operating costs in EUR
+  investorPercentage: decimal("investor_percentage").notNull(), // Percentage that goes to investors
+  affiliatePercentage: decimal("affiliate_percentage").notNull(), // Average percentage to affiliates
+  updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`),
+})
+
+// Investor data table
+export const investorData = pgTable("investor_data", {
+  id: text("id").primaryKey(),
+  investorName: text("investor_name").notNull(),
+  initialInvestment: decimal("initial_investment").notNull(), // In EUR
+  investmentDate: timestamp("investment_date").notNull(),
+  ownershipPercentage: decimal("ownership_percentage").notNull(), // Percentage ownership
+  returnPerOrder: decimal("return_per_order").notNull(), // Percentage return per order
+  updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`),
 })
 
