@@ -47,3 +47,4 @@ export function clearCreatorAuth(): void {
     console.error("Failed to clear creator auth data from cookies:", error)
   }
 }
+

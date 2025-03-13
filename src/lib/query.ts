@@ -5,7 +5,7 @@ import { eq, and } from "drizzle-orm"
 import { sql } from "drizzle-orm"
 import { db } from "../server/db"
 import { v4 as uuidv4 } from "uuid"
-import { PgColumn } from "drizzle-orm/pg-core"
+import type { PgColumn } from "drizzle-orm/pg-core"
 
 // Helper function to generate a UUID
 export async function generateId() {
@@ -14,11 +14,16 @@ export async function generateId() {
 
 // Promo code functions
 export async function getPromoCode(code: string) {
-  return db.select().from(promoCodes).where(eq(promoCodes.code, code.toUpperCase())).execute().then(result => result[0])
+  return db
+    .select()
+    .from(promoCodes)
+    .where(eq(promoCodes.code, code.toUpperCase()))
+    .execute()
+    .then((result) => result[0])
 }
 
 export async function trackPromoCodeUsage(code: string, orderId: string) {
-  const id = await generateId();
+  const id = await generateId()
   return db
     .insert(promoCodeUsage)
     .values({
