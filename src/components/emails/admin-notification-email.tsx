@@ -104,7 +104,7 @@ export const AdminNotificationEmailTemplate = ({ order, language }: AdminNotific
       <Body style={main}>
         <Container style={container}>
           <Section style={header}>
-            <img src="https://mystripy.com/primary-logo.png" alt="Stripy Logo" style={logo} />
+            <img src="https://mystripy.com/primary-logo.png" alt="Stripy Logo" style={logo} width={140} height={28}/>
           </Section>
           <Section style={section}>
             <Heading style={h1}>{t.newOrder}</Heading>
@@ -300,6 +300,7 @@ const header = {
 }
 
 const logo = {
+  display: "block",
   margin: "0 auto",
 }
 
