@@ -244,7 +244,7 @@ const enResources = {
     inPerson: "In-Person Pickup",
     selectPaymentMethod: "Select Payment Method",
     ourRecommendation: "Our Recommendation",
-    mostPopular: "Most Popular",
+    mostPopular: "Our Recommendation",
     aboutStripyNew: "Join the Stripy movement. Because every breath is a choice, and with Stripy, you choose to win.",
     freeShipping: "Is shipping free for every order?",
     freeShippingAnswer:
@@ -561,7 +561,7 @@ const srResources = {
     tableShowingOf: "od",
     tableShowingTotal: "ukupno",
     tableNoResults: "Nema pronađenih rezultata",
-    mostPopular: "Najpopularnije",
+    mostPopular: "Naša preporuka",
     ourRecommendation: "Naša preporuka",
     aboutStripyNew: "Pridruži se Stripy pokretu. Jer svaki dah je izbor, a sa Stripy-jem, biraš pobedu.",
     freeShipping: "Da li je dostava besplatna za svaku porudžbinu?",

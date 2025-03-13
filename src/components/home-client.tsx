@@ -196,7 +196,7 @@ export default function HomeClient() {
         {/* Product Offers Section */}
         <section id="products" className={`container ${sectionSpacing}`}>
           <h2 className="mb-8 text-center text-2xl md:text-3xl font-bold tracking-tight sm:text-4xl">
-            {t("heroTitle")}
+            {t("whatStripyDoes")}
           </h2>
           <div className="grid gap-8 md:gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {products.map((product, index) => (

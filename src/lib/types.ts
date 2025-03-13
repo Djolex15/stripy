@@ -10,6 +10,7 @@ export interface Product {
   price: number
   priceSr: number
   image?: string
+  hoverImage: string
 }
 
 /**
