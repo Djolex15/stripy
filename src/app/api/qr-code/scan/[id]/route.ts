@@ -23,8 +23,14 @@ export async function GET(request: Request, { params }: { params: { id: string }
       })
       .where(eq(qrCodes.id, id))
 
+    // Make sure the URL is absolute
+    let redirectUrl = qrCode.url
+    if (!redirectUrl.startsWith("http://") && !redirectUrl.startsWith("https://")) {
+      redirectUrl = `https://${redirectUrl}`
+    }
+
     // Redirect to the URL
-    return NextResponse.redirect(qrCode.url)
+    return NextResponse.redirect(redirectUrl)
   } catch (error) {
     console.error("Error scanning QR code:", error)
     return NextResponse.json({ error: "Failed to process QR code scan" }, { status: 500 })

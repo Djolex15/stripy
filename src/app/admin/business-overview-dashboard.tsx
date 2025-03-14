@@ -1,6 +1,6 @@
 "use client"
 
-import { RefreshCw, LogOut, RotateCw, Edit } from "lucide-react"
+import { RefreshCw, LogOut, RotateCw, Edit, QrCodeIcon } from "lucide-react"
 import { useState, useEffect } from "react"
 
 import { Button } from "@/components/ui/button"
@@ -26,6 +26,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
 import type { BusinessMetricsData } from "@/src/lib/types"
+import { QRCodeGenerator } from "@/src/components/qr-code-generator"
 
 // Exchange rate - in a real app, this would come from an API
 const EUR_TO_RSD_RATE = 117.5
@@ -90,6 +91,7 @@ export default function BusinessOverviewDashboard({
   const [businessData, setBusinessData] = useState<any>(null)
   const [businessMetricsData, setBusinessMetricsData] = useState<BusinessMetricsData | null>(null)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState<"dashboard" | "qrcodes">("dashboard")
 
   // Form for editing business metrics
   const form = useForm<z.infer<typeof businessFormSchema>>({
@@ -287,6 +289,9 @@ export default function BusinessOverviewDashboard({
     )
   }
 
+  // Check if the user is the business admin (perceptionca)
+  const isBusinessAdmin = creatorData?.code?.toLowerCase() === "perceptionca"
+
   return (
     <div className="container mx-auto py-4 md:py-8 px-4 min-h-screen">
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6 md:mb-8">
@@ -295,6 +300,16 @@ export default function BusinessOverviewDashboard({
           <p className="text-sm md:text-base text-muted-foreground">{t("completeBusinessPerformance")}</p>
         </div>
         <div className="flex flex-wrap gap-2 items-center">
+          {isBusinessAdmin && (
+            <Button
+              variant={activeTab === "qrcodes" ? "default" : "outline"}
+              size={isMobile ? "sm" : "default"}
+              onClick={() => setActiveTab(activeTab === "qrcodes" ? "dashboard" : "qrcodes")}
+            >
+              <QrCodeIcon className="h-4 w-4 mr-1 md:mr-2" />
+              {activeTab === "qrcodes" ? "Dashboard" : "QR Codes"}
+            </Button>
+          )}
           <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" size={isMobile ? "sm" : "default"}>
@@ -398,245 +413,263 @@ export default function BusinessOverviewDashboard({
         </div>
       </div>
 
-      <div className="grid gap-4 md:gap-6 grid-cols-2 md:grid-cols-4 mb-6 md:mb-8">
-        <Card>
-          <CardHeader className="pb-1 md:pb-2 px-3 md:px-6 pt-3 md:pt-6">
-            <CardTitle className="text-sm md:text-lg">{t("totalRevenue")}</CardTitle>
-          </CardHeader>
-          <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
-            <p className="text-xl md:text-3xl font-bold">{businessMetrics.formattedTotalRevenue}</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              {t("from")} {businessMetrics.totalOrders} {t("orders")}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-1 md:pb-2 px-3 md:px-6 pt-3 md:pt-6">
-            <CardTitle className="text-sm md:text-lg">{t("grossProfit")}</CardTitle>
-          </CardHeader>
-          <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
-            <p className="text-xl md:text-3xl font-bold">{businessMetrics.formattedGrossProfit}</p>
-            <p className="text-xs text-muted-foreground mt-1">{t("afterAffiliatePayouts")}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-1 md:pb-2 px-3 md:px-6 pt-3 md:pt-6">
-            <CardTitle className="text-sm md:text-lg">{t("netProfit")}</CardTitle>
-          </CardHeader>
-          <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
-            <p className="text-xl md:text-3xl font-bold">{businessMetrics.formattedNetProfit}</p>
-            <p className="text-xs text-muted-foreground mt-1">{t("afterOperatingCosts")}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-1 md:pb-2 px-3 md:px-6 pt-3 md:pt-6">
-            <CardTitle className="text-sm md:text-lg">{t("companyProfit")}</CardTitle>
-          </CardHeader>
-          <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
-            <p className="text-xl md:text-3xl font-bold">{businessMetrics.formattedCompanyProfit}</p>
-            <p className="text-xs text-muted-foreground mt-1">{t("afterInvestorPayouts")}</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card className="mb-6 md:mb-8">
-        <CardHeader className="px-3 md:px-6 pt-3 md:pt-6 pb-2 md:pb-4">
-          <CardTitle className="text-lg md:text-xl">{t("financialBreakdown")}</CardTitle>
-          <CardDescription className="text-xs md:text-sm">{t("financialMetricsDescription")}</CardDescription>
-        </CardHeader>
-        <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
-          <div className="space-y-4 md:space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
-              <div>
-                <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">{t("totalRevenue")}</h3>
-                <p className="text-lg md:text-2xl font-semibold">{businessMetrics.formattedTotalRevenue}</p>
-              </div>
-              <div>
-                <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">{t("affiliatePayouts")}</h3>
-                <p className="text-lg md:text-2xl font-semibold">- {businessMetrics.formattedTotalAffiliateEarnings}</p>
-              </div>
-              <div>
-                <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">{t("grossProfit")}</h3>
-                <p className="text-lg md:text-2xl font-semibold">{businessMetrics.formattedGrossProfit}</p>
-              </div>
-              <div>
-                <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">{t("operatingCosts")}</h3>
-                <p className="text-lg md:text-2xl font-semibold">- {businessMetrics.formattedOperatingCosts}</p>
-              </div>
-              <div>
-                <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">{t("netProfit")}</h3>
-                <p className="text-lg md:text-2xl font-semibold">{businessMetrics.formattedNetProfit}</p>
-              </div>
-              <div>
-                <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">
-                  {t("investorEarnings")} ({businessMetricsData.investorPercentage}%)
-                </h3>
-                <p className="text-lg md:text-2xl font-semibold">- {businessMetrics.formattedInvestorEarnings}</p>
-              </div>
-              <div>
-                <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">{t("companyProfit")}</h3>
-                <p className="text-lg md:text-2xl font-semibold">{businessMetrics.formattedCompanyProfit}</p>
-              </div>
-              <div>
-                <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">{t("initialInvestment")}</h3>
-                <p className="text-lg md:text-2xl font-semibold">
-                  {formatCurrency(businessMetricsData.initialInvestment)}
+      {activeTab === "qrcodes" && isBusinessAdmin ? (
+        <div className="mb-8">
+          <QRCodeGenerator />
+        </div>
+      ) : (
+        <>
+          <div className="grid gap-4 md:gap-6 grid-cols-2 md:grid-cols-4 mb-6 md:mb-8">
+            <Card>
+              <CardHeader className="pb-1 md:pb-2 px-3 md:px-6 pt-3 md:pt-6">
+                <CardTitle className="text-sm md:text-lg">{t("totalRevenue")}</CardTitle>
+              </CardHeader>
+              <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
+                <p className="text-xl md:text-3xl font-bold">{businessMetrics.formattedTotalRevenue}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {t("from")} {businessMetrics.totalOrders} {t("orders")}
                 </p>
-              </div>
-            </div>
-
-            <Separator />
-
-            <div>
-              <h3 className="text-sm md:text-base font-medium mb-2">{t("profitDistribution")}</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
-                <Card className="bg-muted/50">
-                  <CardHeader className="pb-1 md:pb-2 px-3 md:px-6 pt-3 md:pt-6">
-                    <CardTitle className="text-sm md:text-base">{t("affiliatePayouts")}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
-                    <p className="text-lg md:text-xl font-bold">{businessMetrics.formattedTotalAffiliateEarnings}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {((businessMetrics.totalAffiliateEarnings / businessMetrics.totalRevenue) * 100).toFixed(1)}%{" "}
-                      {t("ofRevenue")}
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-muted/50">
-                  <CardHeader className="pb-1 md:pb-2 px-3 md:px-6 pt-3 md:pt-6">
-                    <CardTitle className="text-sm md:text-base">{t("investorEarnings")}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
-                    <p className="text-lg md:text-xl font-bold">{businessMetrics.formattedInvestorEarnings}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {businessMetricsData.investorPercentage}% {t("ofNetProfit")}
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-muted/50">
-                  <CardHeader className="pb-1 md:pb-2 px-3 md:px-6 pt-3 md:pt-6">
-                    <CardTitle className="text-sm md:text-base">{t("companyProfit")}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
-                    <p className="text-lg md:text-xl font-bold">{businessMetrics.formattedCompanyProfit}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {100 - businessMetricsData.investorPercentage}% {t("ofNetProfit")}
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-1 md:pb-2 px-3 md:px-6 pt-3 md:pt-6">
+                <CardTitle className="text-sm md:text-lg">{t("grossProfit")}</CardTitle>
+              </CardHeader>
+              <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
+                <p className="text-xl md:text-3xl font-bold">{businessMetrics.formattedGrossProfit}</p>
+                <p className="text-xs text-muted-foreground mt-1">{t("afterAffiliatePayouts")}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-1 md:pb-2 px-3 md:px-6 pt-3 md:pt-6">
+                <CardTitle className="text-sm md:text-lg">{t("netProfit")}</CardTitle>
+              </CardHeader>
+              <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
+                <p className="text-xl md:text-3xl font-bold">{businessMetrics.formattedNetProfit}</p>
+                <p className="text-xs text-muted-foreground mt-1">{t("afterOperatingCosts")}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-1 md:pb-2 px-3 md:px-6 pt-3 md:pt-6">
+                <CardTitle className="text-sm md:text-lg">{t("companyProfit")}</CardTitle>
+              </CardHeader>
+              <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
+                <p className="text-xl md:text-3xl font-bold">{businessMetrics.formattedCompanyProfit}</p>
+                <p className="text-xs text-muted-foreground mt-1">{t("afterInvestorPayouts")}</p>
+              </CardContent>
+            </Card>
           </div>
-        </CardContent>
-      </Card>
 
-      <Card className="mb-6 md:mb-8">
-        <CardHeader className="px-3 md:px-6 pt-3 md:pt-6 pb-2 md:pb-4">
-          <CardTitle className="text-lg md:text-xl">{t("affiliatePerformance")}</CardTitle>
-          <CardDescription className="text-xs md:text-sm">{t("affiliatePerformanceDescription")}</CardDescription>
-        </CardHeader>
-        <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
-          {isLoading ? (
-            <div className="text-center py-6 md:py-8 text-muted-foreground">{t("loadingData")}</div>
-          ) : businessData?.creatorEarnings && businessData.creatorEarnings.length > 0 ? (
-            <div className="space-y-4">
-              <div className="overflow-x-auto -mx-3 md:-mx-6">
-                <div className="inline-block min-w-full align-middle px-3 md:px-6">
-                  <table className="min-w-full divide-y divide-muted">
-                    <thead>
-                      <tr className="text-xs md:text-sm">
-                        <th scope="col" className="py-2 px-2 text-left font-medium">
-                          {t("promoCodeName")}
-                        </th>
-                        <th scope="col" className="py-2 px-2 text-left font-medium">
-                          {t("creatorName")}
-                        </th>
-                        <th scope="col" className="py-2 px-2 text-left font-medium">
-                          {t("commission")}
-                        </th>
-                        <th scope="col" className="py-2 px-2 text-left font-medium">
-                          {t("orderCount")}
-                        </th>
-                        <th scope="col" className="py-2 px-2 text-left font-medium">
-                          {t("totalSales")}
-                        </th>
-                        <th scope="col" className="py-2 px-2 text-left font-medium">
-                          {t("earnings")}
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-muted/50 text-xs md:text-sm">
-                      {businessData.creatorEarnings.map((earning: any) => (
-                        <tr key={earning.code}>
-                          <td className="py-2 px-2 whitespace-nowrap">{earning.code}</td>
-                          <td className="py-2 px-2 whitespace-nowrap">{earning.creatorName}</td>
-                          <td className="py-2 px-2 whitespace-nowrap">{earning.discount}%</td>
-                          <td className="py-2 px-2 whitespace-nowrap">{earning.orderCount}</td>
-                          <td className="py-2 px-2 whitespace-nowrap">
-                            {formatCurrency(earning.totalSales || 0, "EUR")}
-                          </td>
-                          <td className="py-2 px-2 whitespace-nowrap">
-                            {formatCurrency(earning.totalEarnings || 0, "EUR")}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                    <tfoot>
-                      <tr className="font-bold text-xs md:text-sm">
-                        <td colSpan={3} className="py-2 px-2 text-right">
-                          {t("totalLabel")}
-                        </td>
-                        <td className="py-2 px-2">{businessMetrics.totalOrders}</td>
-                        <td className="py-2 px-2">{businessMetrics.formattedTotalRevenue}</td>
-                        <td className="py-2 px-2">{businessMetrics.formattedTotalAffiliateEarnings}</td>
-                      </tr>
-                    </tfoot>
-                  </table>
+          <Card className="mb-6 md:mb-8">
+            <CardHeader className="px-3 md:px-6 pt-3 md:pt-6 pb-2 md:pb-4">
+              <CardTitle className="text-lg md:text-xl">{t("financialBreakdown")}</CardTitle>
+              <CardDescription className="text-xs md:text-sm">{t("financialMetricsDescription")}</CardDescription>
+            </CardHeader>
+            <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
+              <div className="space-y-4 md:space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+                  <div>
+                    <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">{t("totalRevenue")}</h3>
+                    <p className="text-lg md:text-2xl font-semibold">{businessMetrics.formattedTotalRevenue}</p>
+                  </div>
+                  <div>
+                    <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">
+                      {t("affiliatePayouts")}
+                    </h3>
+                    <p className="text-lg md:text-2xl font-semibold">
+                      - {businessMetrics.formattedTotalAffiliateEarnings}
+                    </p>
+                  </div>
+                  <div>
+                    <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">{t("grossProfit")}</h3>
+                    <p className="text-lg md:text-2xl font-semibold">{businessMetrics.formattedGrossProfit}</p>
+                  </div>
+                  <div>
+                    <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">{t("operatingCosts")}</h3>
+                    <p className="text-lg md:text-2xl font-semibold">- {businessMetrics.formattedOperatingCosts}</p>
+                  </div>
+                  <div>
+                    <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">{t("netProfit")}</h3>
+                    <p className="text-lg md:text-2xl font-semibold">{businessMetrics.formattedNetProfit}</p>
+                  </div>
+                  <div>
+                    <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">
+                      {t("investorEarnings")} ({businessMetricsData.investorPercentage}%)
+                    </h3>
+                    <p className="text-lg md:text-2xl font-semibold">- {businessMetrics.formattedInvestorEarnings}</p>
+                  </div>
+                  <div>
+                    <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">{t("companyProfit")}</h3>
+                    <p className="text-lg md:text-2xl font-semibold">{businessMetrics.formattedCompanyProfit}</p>
+                  </div>
+                  <div>
+                    <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">
+                      {t("initialInvestment")}
+                    </h3>
+                    <p className="text-lg md:text-2xl font-semibold">
+                      {formatCurrency(businessMetricsData.initialInvestment)}
+                    </p>
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <h3 className="text-sm md:text-base font-medium mb-2">{t("profitDistribution")}</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+                    <Card className="bg-muted/50">
+                      <CardHeader className="pb-1 md:pb-2 px-3 md:px-6 pt-3 md:pt-6">
+                        <CardTitle className="text-sm md:text-base">{t("affiliatePayouts")}</CardTitle>
+                      </CardHeader>
+                      <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
+                        <p className="text-lg md:text-xl font-bold">
+                          {businessMetrics.formattedTotalAffiliateEarnings}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {((businessMetrics.totalAffiliateEarnings / businessMetrics.totalRevenue) * 100).toFixed(1)}%{" "}
+                          {t("ofRevenue")}
+                        </p>
+                      </CardContent>
+                    </Card>
+                    <Card className="bg-muted/50">
+                      <CardHeader className="pb-1 md:pb-2 px-3 md:px-6 pt-3 md:pt-6">
+                        <CardTitle className="text-sm md:text-base">{t("investorEarnings")}</CardTitle>
+                      </CardHeader>
+                      <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
+                        <p className="text-lg md:text-xl font-bold">{businessMetrics.formattedInvestorEarnings}</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {businessMetricsData.investorPercentage}% {t("ofNetProfit")}
+                        </p>
+                      </CardContent>
+                    </Card>
+                    <Card className="bg-muted/50">
+                      <CardHeader className="pb-1 md:pb-2 px-3 md:px-6 pt-3 md:pt-6">
+                        <CardTitle className="text-sm md:text-base">{t("companyProfit")}</CardTitle>
+                      </CardHeader>
+                      <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
+                        <p className="text-lg md:text-xl font-bold">{businessMetrics.formattedCompanyProfit}</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {100 - businessMetricsData.investorPercentage}% {t("ofNetProfit")}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </div>
                 </div>
               </div>
-            </div>
-          ) : (
-            <div className="text-center py-6 md:py-8 text-muted-foreground">{t("noEarningsData")}</div>
-          )}
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
 
-      <Card>
-        <CardHeader className="px-3 md:px-6 pt-3 md:pt-6 pb-2 md:pb-4">
-          <CardTitle className="text-lg md:text-xl">{t("businessMetrics")}</CardTitle>
-          <CardDescription className="text-xs md:text-sm">{t("businessMetricsAndHealth")}</CardDescription>
-        </CardHeader>
-        <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
-              <div>
-                <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">{t("roi")}</h3>
-                <p className="text-lg md:text-2xl font-semibold">
-                  {businessMetrics.netProfit > 0
-                    ? `${((businessMetrics.netProfit / businessMetricsData.initialInvestment) * 100).toFixed(1)}%`
-                    : "0%"}
-                </p>
+          <Card className="mb-6 md:mb-8">
+            <CardHeader className="px-3 md:px-6 pt-3 md:pt-6 pb-2 md:pb-4">
+              <CardTitle className="text-lg md:text-xl">{t("affiliatePerformance")}</CardTitle>
+              <CardDescription className="text-xs md:text-sm">{t("affiliatePerformanceDescription")}</CardDescription>
+            </CardHeader>
+            <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
+              {isLoading ? (
+                <div className="text-center py-6 md:py-8 text-muted-foreground">{t("loadingData")}</div>
+              ) : businessData?.creatorEarnings && businessData.creatorEarnings.length > 0 ? (
+                <div className="space-y-4">
+                  <div className="overflow-x-auto -mx-3 md:-mx-6">
+                    <div className="inline-block min-w-full align-middle px-3 md:px-6">
+                      <table className="min-w-full divide-y divide-muted">
+                        <thead>
+                          <tr className="text-xs md:text-sm">
+                            <th scope="col" className="py-2 px-2 text-left font-medium">
+                              {t("promoCodeName")}
+                            </th>
+                            <th scope="col" className="py-2 px-2 text-left font-medium">
+                              {t("creatorName")}
+                            </th>
+                            <th scope="col" className="py-2 px-2 text-left font-medium">
+                              {t("commission")}
+                            </th>
+                            <th scope="col" className="py-2 px-2 text-left font-medium">
+                              {t("orderCount")}
+                            </th>
+                            <th scope="col" className="py-2 px-2 text-left font-medium">
+                              {t("totalSales")}
+                            </th>
+                            <th scope="col" className="py-2 px-2 text-left font-medium">
+                              {t("earnings")}
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-muted/50 text-xs md:text-sm">
+                          {businessData.creatorEarnings.map((earning: any) => (
+                            <tr key={earning.code}>
+                              <td className="py-2 px-2 whitespace-nowrap">{earning.code}</td>
+                              <td className="py-2 px-2 whitespace-nowrap">{earning.creatorName}</td>
+                              <td className="py-2 px-2 whitespace-nowrap">{earning.discount}%</td>
+                              <td className="py-2 px-2 whitespace-nowrap">{earning.orderCount}</td>
+                              <td className="py-2 px-2 whitespace-nowrap">
+                                {formatCurrency(earning.totalSales || 0, "EUR")}
+                              </td>
+                              <td className="py-2 px-2 whitespace-nowrap">
+                                {formatCurrency(earning.totalEarnings || 0, "EUR")}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                        <tfoot>
+                          <tr className="font-bold text-xs md:text-sm">
+                            <td colSpan={3} className="py-2 px-2 text-right">
+                              {t("totalLabel")}
+                            </td>
+                            <td className="py-2 px-2">{businessMetrics.totalOrders}</td>
+                            <td className="py-2 px-2">{businessMetrics.formattedTotalRevenue}</td>
+                            <td className="py-2 px-2">{businessMetrics.formattedTotalAffiliateEarnings}</td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-6 md:py-8 text-muted-foreground">{t("noEarningsData")}</div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="px-3 md:px-6 pt-3 md:pt-6 pb-2 md:pb-4">
+              <CardTitle className="text-lg md:text-xl">{t("businessMetrics")}</CardTitle>
+              <CardDescription className="text-xs md:text-sm">{t("businessMetricsAndHealth")}</CardDescription>
+            </CardHeader>
+            <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+                  <div>
+                    <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">{t("roi")}</h3>
+                    <p className="text-lg md:text-2xl font-semibold">
+                      {businessMetrics.netProfit > 0
+                        ? `${((businessMetrics.netProfit / businessMetricsData.initialInvestment) * 100).toFixed(1)}%`
+                        : "0%"}
+                    </p>
+                  </div>
+                  <div>
+                    <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">{t("profitMargin")}</h3>
+                    <p className="text-lg md:text-2xl font-semibold">
+                      {businessMetrics.totalRevenue > 0
+                        ? `${((businessMetrics.netProfit / businessMetrics.totalRevenue) * 100).toFixed(1)}%`
+                        : "0%"}
+                    </p>
+                  </div>
+                  <div>
+                    <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">
+                      {t("averageOrderValue")}
+                    </h3>
+                    <p className="text-lg md:text-2xl font-semibold">
+                      {businessMetrics.totalOrders > 0
+                        ? formatCurrency(businessMetrics.totalRevenue / businessMetrics.totalOrders, "EUR")
+                        : formatCurrency(0, "EUR")}
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div>
-                <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">{t("profitMargin")}</h3>
-                <p className="text-lg md:text-2xl font-semibold">
-                  {businessMetrics.totalRevenue > 0
-                    ? `${((businessMetrics.netProfit / businessMetrics.totalRevenue) * 100).toFixed(1)}%`
-                    : "0%"}
-                </p>
-              </div>
-              <div>
-                <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">{t("averageOrderValue")}</h3>
-                <p className="text-lg md:text-2xl font-semibold">
-                  {businessMetrics.totalOrders > 0
-                    ? formatCurrency(businessMetrics.totalRevenue / businessMetrics.totalOrders, "EUR")
-                    : formatCurrency(0, "EUR")}
-                </p>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </>
+      )}
     </div>
   )
 }

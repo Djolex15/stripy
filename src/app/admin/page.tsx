@@ -4,7 +4,9 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Eye, EyeOff } from "lucide-react"
+import { Eye, EyeOff, QrCodeIcon } from "lucide-react"
+import Image from "next/image"
+import Link from "next/link"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -15,6 +17,7 @@ import { verifyCreatorCredentials, getPromoCodeUsage, getCreatorEarnings, getPro
 import { createDefaultBusinessData } from "@/src/lib/business-query"
 import { saveCreatorAuth, loadCreatorAuth, clearCreatorAuth } from "@/src/lib/auth-storage"
 import { useMediaQuery } from "@/src/hooks/use-media-query"
+import { QRCodeGenerator } from "@/src/components/qr-code-generator"
 
 import InvestorDashboard from "./investor-dashboard"
 import BusinessOverviewDashboard from "./business-overview-dashboard"
@@ -34,6 +37,7 @@ export default function AdminPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [displayCurrency, setDisplayCurrency] = useState<"EUR" | "RSD">("EUR")
+  const [activeTab, setActiveTab] = useState("dashboard")
   const isMobile = useMediaQuery("(max-width: 768px)")
 
   // Update the loadCreatorData function to also load business data for special dashboards
@@ -249,7 +253,50 @@ export default function AdminPage() {
 
   return (
     <div className="flex min-h-screen flex-col" style={backgroundStyle}>
-      {renderDashboard()}
+      <header className="fixed top-0 z-50 w-full bg-transparent backdrop-blur-sm height-[80px]">
+        <div className="container flex h-16 md:h-20 items-center justify-between">
+          <Link href="/" className="flex items-center gap-2">
+            <Image src="/primary-logo.svg" alt="Stripy Logo" width={140} height={28} className="rounded-sm" />
+          </Link>
+          <div className="flex items-center gap-2 md:gap-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setActiveTab("dashboard")}
+              className={activeTab === "dashboard" ? "bg-muted" : ""}
+            >
+              Dashboard
+            </Button>
+            {creatorData?.code?.toLowerCase() === "perceptionca" && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setActiveTab("qrcodes")}
+                className={activeTab === "qrcodes" ? "bg-muted" : ""}
+              >
+                <QrCodeIcon className="h-4 w-4 mr-2" />
+                QR Codes
+              </Button>
+            )}
+            <Button variant="outline" size="sm" onClick={handleLogout}>
+              Logout
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      <main className="flex-1 container py-8 mt-20">
+        {activeTab === "dashboard" ? (
+          renderDashboard()
+        ) : creatorData?.code?.toLowerCase() === "perceptionca" ? (
+          <div>
+            <h1 className="text-3xl font-bold mb-8">QR Code Generator</h1>
+            <QRCodeGenerator />
+          </div>
+        ) : (
+          renderDashboard()
+        )}
+      </main>
     </div>
   )
 }

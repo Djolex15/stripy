@@ -23,8 +23,20 @@ export async function POST(request: Request) {
     // Generate a unique ID for the QR code
     const id = nanoid(10)
 
-    // Generate QR code data URL
-    const qrCodeDataUrl = await QRCode.toDataURL(`${process.env.NEXT_PUBLIC_APP_URL}/api/qr-code/scan/${id}`)
+    // Get the base URL from environment or request
+    const protocol = process.env.NODE_ENV === "production" ? "https" : "http"
+    const host = request.headers.get("host") || process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL
+    const baseUrl = `${protocol}://${host}`
+
+    // Generate QR code data URL with absolute URL and custom styling
+    const qrCodeDataUrl = await QRCode.toDataURL(`${baseUrl}/api/qr-code/scan/${id}`, {
+      color: {
+        dark: "#cbff01", // QR code color
+        light: "#00000000", // Transparent background
+      },
+      margin: 1,
+      width: 300,
+    })
 
     // Store the QR code in the database
     await db.insert(qrCodes).values({
