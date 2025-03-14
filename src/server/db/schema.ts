@@ -10,7 +10,7 @@ export const promoCodes = pgTable("promo_codes", {
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
 })
 
-// Promo code usage table
+// Update the promoCodeUsage table to include earnings
 export const promoCodeUsage = pgTable("promo_code_usage", {
   id: text("id").primaryKey(),
   code: text("code")
@@ -18,6 +18,7 @@ export const promoCodeUsage = pgTable("promo_code_usage", {
     .references(() => promoCodes.code),
   orderId: text("order_id").notNull(),
   usedAt: text("used_at").default(sql`CURRENT_TIMESTAMP`),
+  earnings: text("earnings").default("0"), // New field for affiliate earnings
 })
 
 // Orders table
@@ -32,7 +33,7 @@ export const orders = pgTable("orders", {
   postalCode: text("postal_code").notNull(),
   notes: text("notes"),
   totalPrice: integer("total_price").notNull(), // Store in cents/paras
-  currency: text("currency").notNull(), // "EUR" or "RSD"
+  currency: text("currency").default("EUR").notNull(), // "EUR" or "RSD"
   promoCode: text("promo_code").references(() => promoCodes.code),
   paymentMethod: text("payment_method").notNull(), // Added payment method field
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
@@ -63,7 +64,7 @@ export const reviews = pgTable("reviews", {
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
 })
 
-// Business metrics table
+// Update the businessMetrics table in your schema
 export const businessMetrics = pgTable("business_metrics", {
   id: text("id").primaryKey(),
   initialInvestment: decimal("initial_investment").notNull(), // In EUR
@@ -71,6 +72,21 @@ export const businessMetrics = pgTable("business_metrics", {
   operatingCosts: decimal("operating_costs").notNull(), // Monthly operating costs in EUR
   investorPercentage: decimal("investor_percentage").notNull(), // Percentage that goes to investors
   affiliatePercentage: decimal("affiliate_percentage").notNull(), // Average percentage to affiliates
+
+  // New fields for calculated metrics
+  totalOrders: text("total_orders").default("0"),
+  grossRevenue: text("gross_revenue").default("0"),
+  netRevenue: text("net_revenue").default("0"),
+  totalAffiliatePayouts: text("total_affiliate_payouts").default("0"),
+  affiliateDrivenSales: text("affiliate_driven_sales").default("0"),
+  affiliateOrderCount: text("affiliate_order_count").default("0"),
+  operatingCostsToDate: text("operating_costs_to_date").default("0"),
+  profit: text("profit").default("0"),
+  investmentRecovered: text("investment_recovered").default("0"), // 0 = false, 1 = true
+  remainingInvestment: text("remaining_investment").default("0"),
+  investorReturns: text("investor_returns").default("0"),
+  companyProfit: text("company_profit").default("0"),
+
   updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`),
 })
 

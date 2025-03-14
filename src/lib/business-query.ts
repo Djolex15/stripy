@@ -1,10 +1,14 @@
+// Update your existing business-query.ts file with these additional functions
+
 "use server"
 
-import { businessMetrics, investorData } from "@/src/server/db/schema"
+import { businessMetrics, investorData, promoCodes, orders } from "@/src/server/db/schema"
 import { eq } from "drizzle-orm"
 import { db } from "@/src/server/db"
 import { v4 as uuidv4 } from "uuid"
-import type { BusinessMetricsData, InvestorData } from "@/src/lib/types"
+import type { BusinessMetricsData } from "@/src/lib/types"
+import { calculateAndUpdateBusinessMetrics } from "@/src/lib/business-metrics"
+import { sql } from "drizzle-orm"
 
 // Helper function to generate a UUID
 export async function generateId() {
@@ -14,9 +18,41 @@ export async function generateId() {
 // Business metrics functions
 export async function getBusinessMetrics(): Promise<BusinessMetricsData | null> {
   try {
+    // First, ensure metrics are up to date
+    await calculateAndUpdateBusinessMetrics()
+
+    // Then retrieve the updated metrics
     const result = await db.select().from(businessMetrics).limit(1).execute()
 
-    return result.length > 0 ? (result[0] as unknown as BusinessMetricsData) : null
+    if (result.length > 0) {
+      // Convert string values to numbers for the frontend
+      const metrics = result[0]
+      return {
+        ...metrics,
+        initialInvestment: Number.parseFloat(metrics.initialInvestment),
+        operatingCosts: Number.parseFloat(metrics.operatingCosts),
+        investorPercentage: Number.parseFloat(metrics.investorPercentage),
+        affiliatePercentage: Number.parseFloat(metrics.affiliatePercentage),
+        totalOrders: Number.parseInt(metrics.totalOrders || "0"),
+        grossRevenue: Number.parseInt(metrics.grossRevenue || "0"),
+        netRevenue: Number.parseInt(metrics.netRevenue || "0"),
+        totalAffiliatePayouts: Number.parseInt(metrics.totalAffiliatePayouts || "0"),
+        affiliateDrivenSales: Number.parseInt(metrics.affiliateDrivenSales || "0"),
+        affiliateOrderCount: Number.parseInt(metrics.affiliateOrderCount || "0"),
+        operatingCostsToDate: Number.parseFloat(metrics.operatingCostsToDate || "0"),
+        profit: Number.parseFloat(metrics.profit || "0"),
+        investmentRecovered: metrics.investmentRecovered === "1",
+        remainingInvestment: Number.parseFloat(metrics.remainingInvestment || "0"),
+        investorReturns: Number.parseFloat(metrics.investorReturns || "0"),
+        companyProfit: Number.parseFloat(metrics.companyProfit || "0"),
+        // Convert Date objects to ISO strings for serialization
+        investmentDate:
+          metrics.investmentDate instanceof Date ? metrics.investmentDate.toISOString() : metrics.investmentDate,
+        updatedAt: metrics.updatedAt instanceof Date ? metrics.updatedAt.toISOString() : metrics.updatedAt,
+      } as unknown as BusinessMetricsData
+    }
+
+    return null
   } catch (error) {
     console.error("Failed to get business metrics:", error)
     return null
@@ -26,127 +62,145 @@ export async function getBusinessMetrics(): Promise<BusinessMetricsData | null> 
 export async function updateBusinessMetrics(data: Omit<BusinessMetricsData, "id" | "updatedAt">) {
   try {
     // Check if we already have business metrics
-    const existingMetrics = await getBusinessMetrics()
+    const existingMetrics = await db.select().from(businessMetrics).limit(1).execute()
 
-    if (existingMetrics) {
+    if (existingMetrics.length > 0) {
       // Update existing record
-      return db
+      await db
         .update(businessMetrics)
         .set({
           initialInvestment: data.initialInvestment.toString(),
-          investmentDate: data.investmentDate,
+          investmentDate: new Date(data.investmentDate),
           operatingCosts: data.operatingCosts.toString(),
           investorPercentage: data.investorPercentage.toString(),
           affiliatePercentage: data.affiliatePercentage.toString(),
           updatedAt: new Date(),
         })
-        .where(eq(businessMetrics.id, existingMetrics.id))
+        .where(eq(businessMetrics.id, existingMetrics[0].id))
         .execute()
+
+      // Recalculate metrics with new settings
+      await calculateAndUpdateBusinessMetrics()
+
+      return { success: true }
     } else {
       // Create new record
       const id = await generateId()
-      return db
+      await db
         .insert(businessMetrics)
         .values({
           id,
           initialInvestment: data.initialInvestment.toString(),
-          investmentDate: data.investmentDate,
+          investmentDate: new Date(data.investmentDate),
           operatingCosts: data.operatingCosts.toString(),
           investorPercentage: data.investorPercentage.toString(),
           affiliatePercentage: data.affiliatePercentage.toString(),
           updatedAt: new Date(),
         })
         .execute()
+
+      // Calculate initial metrics
+      await calculateAndUpdateBusinessMetrics()
+
+      return { success: true, id }
     }
   } catch (error) {
     console.error("Failed to update business metrics:", error)
-    throw error
+    return { success: false, error }
   }
 }
 
-// Investor data functions
-export async function getInvestorData(id?: string): Promise<InvestorData | null> {
+// Get all affiliate earnings data for the business overview
+export async function getAllCreatorEarnings() {
   try {
-    if (id) {
-      const result = await db.select().from(investorData).where(eq(investorData.id, id)).limit(1).execute()
+    // First get all promo codes
+    const promoCodesData = await db.select().from(promoCodes).execute()
 
-      return result.length > 0 ? (result[0] as unknown as InvestorData) : null
-    } else {
-      // Get the first investor if no ID is provided
-      const result = await db.select().from(investorData).limit(1).execute()
+    // For each promo code, get the orders and calculate earnings with currency conversion
+    const EUR_TO_RSD_RATE = 117.5
+    const results = []
 
-      return result.length > 0 ? (result[0] as unknown as InvestorData) : null
+    for (const promoCode of promoCodesData) {
+      // Get all orders with this promo code
+      const ordersWithPromo = await db.select().from(orders).where(eq(orders.promoCode, promoCode.code)).execute()
+
+      let totalSales = 0
+      let totalEarnings = 0
+
+      // Process each order with currency conversion
+      for (const order of ordersWithPromo) {
+        const amount = Number(order.totalPrice)
+        const discount = Number(promoCode.discount || 0)
+
+        // Convert RSD to EUR if the order is in RSD
+        if (order.currency === "RSD") {
+          const amountInEur = amount / EUR_TO_RSD_RATE
+          totalSales += amountInEur
+          totalEarnings += (amountInEur * discount) / 100
+        } else {
+          // Default to EUR
+          totalSales += amount
+          totalEarnings += (amount * discount) / 100
+        }
+      }
+
+      results.push({
+        code: promoCode.code,
+        creatorName: promoCode.creatorName,
+        discount: Number.parseFloat(promoCode.discount.toString()),
+        orderCount: ordersWithPromo.length,
+        totalSales,
+        totalEarnings,
+      })
     }
-  } catch (error) {
-    console.error("Failed to get investor data:", error)
-    return null
-  }
-}
 
-export async function getAllInvestors(): Promise<InvestorData[]> {
-  try {
-    const result = await db.select().from(investorData).execute()
-
-    return result as unknown as InvestorData[]
+    return results.sort((a, b) => b.totalSales - a.totalSales)
   } catch (error) {
-    console.error("Failed to get all investors:", error)
+    console.error("Failed to get all creator earnings:", error)
     return []
   }
 }
 
-export async function updateInvestorData(data: Omit<InvestorData, "updatedAt">) {
+// Get all promo code usage data
+export async function getAllPromoCodeUsage() {
   try {
-    // Check if the investor already exists
-    const existingInvestor = await getInvestorData(data.id)
+    const result = await db.execute(sql`
+      SELECT 
+        p.code, 
+        COUNT(pcu.id) as "usageCount"
+      FROM 
+        promo_codes p
+      LEFT JOIN 
+        promo_code_usage pcu ON p.code = pcu.code
+      GROUP BY 
+        p.code
+      ORDER BY 
+        "usageCount" DESC
+    `)
 
-    if (existingInvestor) {
-      // Update existing record
-      return db
-        .update(investorData)
-        .set({
-          investorName: data.investorName,
-          initialInvestment: data.initialInvestment.toString(),
-          investmentDate: data.investmentDate,
-          ownershipPercentage: data.ownershipPercentage.toString(),
-          returnPerOrder: data.returnPerOrder.toString(),
-          updatedAt: new Date(),
-        })
-        .where(eq(investorData.id, data.id))
-        .execute()
-    } else {
-      // Create new record
-      const id = data.id || (await generateId())
-      return db
-        .insert(investorData)
-        .values({
-          id,
-          investorName: data.investorName,
-          initialInvestment: data.initialInvestment.toString(),
-          investmentDate: data.investmentDate,
-          ownershipPercentage: data.ownershipPercentage.toString(),
-          returnPerOrder: data.returnPerOrder.toString(),
-          updatedAt: new Date(),
-        })
-        .execute()
-    }
+    // Ensure all values are serializable
+    return result.map((row) => ({
+      code: row.code,
+      usageCount: Number.parseInt(row.usageCount as string),
+    }))
   } catch (error) {
-    console.error("Failed to update investor data:", error)
-    throw error
+    console.error("Failed to get all promo code usage:", error)
+    return []
   }
 }
 
 export async function createDefaultBusinessData() {
   try {
     // Check if we already have business metrics
-    const existingMetrics = await getBusinessMetrics()
-    const existingInvestor = await getInvestorData()
+    const existingMetrics = await db.select().from(businessMetrics).limit(1).execute()
+    const existingInvestor = await db.select().from(investorData).limit(1).execute()
 
     let businessId = null
     let investorId = null
     let metricsCreated = false
     let investorCreated = false
 
-    if (!existingMetrics) {
+    if (existingMetrics.length === 0) {
       // Create default business metrics
       businessId = await generateId()
       await db
@@ -162,9 +216,12 @@ export async function createDefaultBusinessData() {
         })
         .execute()
       metricsCreated = true
+
+      // Calculate initial metrics
+      await calculateAndUpdateBusinessMetrics()
     }
 
-    if (!existingInvestor) {
+    if (existingInvestor.length === 0) {
       // Create default investor data
       investorId = await generateId()
       await db

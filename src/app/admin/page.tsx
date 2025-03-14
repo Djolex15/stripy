@@ -278,9 +278,6 @@ export default function AdminPage() {
                 QR Codes
               </Button>
             )}
-            <Button variant="outline" size="sm" onClick={handleLogout}>
-              Logout
-            </Button>
           </div>
         </div>
       </header>
@@ -288,11 +285,6 @@ export default function AdminPage() {
       <main className="flex-1 container py-8 mt-20">
         {activeTab === "dashboard" ? (
           renderDashboard()
-        ) : creatorData?.code?.toLowerCase() === "perceptionca" ? (
-          <div>
-            <h1 className="text-3xl font-bold mb-8">QR Code Generator</h1>
-            <QRCodeGenerator />
-          </div>
         ) : (
           renderDashboard()
         )}

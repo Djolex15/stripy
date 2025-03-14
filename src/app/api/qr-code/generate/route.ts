@@ -25,7 +25,7 @@ export async function POST(request: Request) {
 
     // Get the base URL from environment or request
     const protocol = process.env.NODE_ENV === "production" ? "https" : "http"
-    const host = request.headers.get("host") || process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL
+    const host = "mystripy.com"
     const baseUrl = `${protocol}://${host}`
 
     // Generate QR code data URL with absolute URL and custom styling

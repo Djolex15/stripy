@@ -93,17 +93,40 @@ export interface PromoCode {
   createdAt: string
 }
 
-/**
- * Business metrics data structure
- */
+// Update the BusinessMetricsData interface
 export interface BusinessMetricsData {
   id: string
   initialInvestment: number // In EUR
-  investmentDate: Date
+  investmentDate: string | Date // Changed to accept string or Date
   operatingCosts: number // Monthly operating costs in EUR
   investorPercentage: number // Percentage that goes to investors
   affiliatePercentage: number // Average percentage to affiliates
-  updatedAt: Date
+
+  // New fields for calculated metrics
+  totalOrders?: number
+  grossRevenue?: number
+  netRevenue?: number
+  totalAffiliatePayouts?: number
+  affiliateDrivenSales?: number
+  affiliateOrderCount?: number
+  operatingCostsToDate?: number
+  profit?: number
+  investmentRecovered?: boolean
+  remainingInvestment?: number
+  investorReturns?: number
+  companyProfit?: number
+
+  updatedAt: string | Date // Changed to accept string or Date
+}
+
+// Add this to your existing types.ts file
+export interface AffiliatePerformance {
+  code: string
+  creatorName: string
+  discount: number
+  orderCount: number
+  totalSales: number
+  totalEarnings: number
 }
 
 /**
@@ -118,4 +141,3 @@ export interface InvestorData {
   returnPerOrder: number // Percentage return per order
   updatedAt: Date
 }
-

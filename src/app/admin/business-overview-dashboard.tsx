@@ -1,11 +1,12 @@
 "use client"
 
-import { RefreshCw, LogOut, RotateCw, Edit, QrCodeIcon } from "lucide-react"
 import { useState, useEffect } from "react"
-
+import { RefreshCw, LogOut, RotateCw, Edit } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
+import { Progress } from "@/components/ui/progress"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Dialog,
   DialogContent,
@@ -20,13 +21,11 @@ import { Input } from "@/components/ui/input"
 import { useMediaQuery } from "@/src/hooks/use-media-query"
 import { getAllPromoCodeUsage, getAllCreatorEarnings } from "@/src/lib/query"
 import { getBusinessMetrics, updateBusinessMetrics } from "@/src/lib/business-query"
-import { useTranslation } from "@/src/lib/i18n-client"
 import { useToast } from "@/src/hooks/use-toast"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
 import type { BusinessMetricsData } from "@/src/lib/types"
-import { QRCodeGenerator } from "@/src/components/qr-code-generator"
 
 // Exchange rate - in a real app, this would come from an API
 const EUR_TO_RSD_RATE = 117.5
@@ -84,14 +83,13 @@ export default function BusinessOverviewDashboard({
   onLogout,
   onToggleCurrency,
 }: BusinessOverviewDashboardProps) {
-  const { t } = useTranslation()
   const { toast } = useToast()
   const isMobile = useMediaQuery("(max-width: 768px)")
   const [isLoading, setIsLoading] = useState(isLoadingProp)
   const [businessData, setBusinessData] = useState<any>(null)
   const [businessMetricsData, setBusinessMetricsData] = useState<BusinessMetricsData | null>(null)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState<"dashboard" | "qrcodes">("dashboard")
+  const [activeTab, setActiveTab] = useState<"overview" | "revenue" | "affiliates" | "investment">("overview")
 
   // Form for editing business metrics
   const form = useForm<z.infer<typeof businessFormSchema>>({
@@ -115,7 +113,11 @@ export default function BusinessOverviewDashboard({
     if (businessMetricsData) {
       form.reset({
         initialInvestment: businessMetricsData.initialInvestment,
-        investmentDate: new Date(businessMetricsData.investmentDate).toISOString().split("T")[0],
+        // Handle both string and Date objects for investmentDate
+        investmentDate:
+          typeof businessMetricsData.investmentDate === "string"
+            ? businessMetricsData.investmentDate.split("T")[0]
+            : new Date(businessMetricsData.investmentDate).toISOString().split("T")[0],
         operatingCosts: businessMetricsData.operatingCosts,
         investorPercentage: businessMetricsData.investorPercentage,
         affiliatePercentage: businessMetricsData.affiliatePercentage,
@@ -142,7 +144,6 @@ export default function BusinessOverviewDashboard({
     }
   }
 
-  // Update the loadBusinessMetrics function to handle errors better
   const loadBusinessMetrics = async () => {
     try {
       const data = await getBusinessMetrics()
@@ -150,19 +151,6 @@ export default function BusinessOverviewDashboard({
         setBusinessMetricsData(data)
       } else {
         console.error("No business metrics data returned")
-        // Create default data if none exists
-        await updateBusinessMetrics({
-          initialInvestment: 25000,
-          investmentDate: new Date("2023-01-01"),
-          operatingCosts: 1500,
-          investorPercentage: 15,
-          affiliatePercentage: 10,
-        })
-        // Try to load again
-        const retryData = await getBusinessMetrics()
-        if (retryData) {
-          setBusinessMetricsData(retryData)
-        }
       }
     } catch (error) {
       console.error("Failed to load business metrics:", error)
@@ -172,7 +160,7 @@ export default function BusinessOverviewDashboard({
   // Handle form submission
   const onSubmit = async (values: z.infer<typeof businessFormSchema>) => {
     try {
-      await updateBusinessMetrics({
+      const result = await updateBusinessMetrics({
         initialInvestment: values.initialInvestment,
         investmentDate: new Date(values.investmentDate),
         operatingCosts: values.operatingCosts,
@@ -180,15 +168,19 @@ export default function BusinessOverviewDashboard({
         affiliatePercentage: values.affiliatePercentage,
       })
 
-      // Reload business metrics
-      await loadBusinessMetrics()
+      if (result.success) {
+        // Reload business metrics
+        await loadBusinessMetrics()
 
-      toast({
-        title: "Business metrics updated",
-        description: "The business metrics have been successfully updated.",
-      })
+        toast({
+          title: "Business metrics updated",
+          description: "The business metrics have been successfully updated.",
+        })
 
-      setIsEditDialogOpen(false)
+        setIsEditDialogOpen(false)
+      } else {
+        throw new Error("Failed to update business metrics")
+      }
     } catch (error) {
       console.error("Failed to update business metrics:", error)
       toast({
@@ -200,9 +192,9 @@ export default function BusinessOverviewDashboard({
   }
 
   // Format currency based on selected display currency
-  const formatCurrency = (amount: number, originalCurrency = "EUR") => {
+  const formatCurrency = (amount: number | undefined, originalCurrency = "EUR") => {
     // Handle null or undefined amounts
-    if (amount === null || amount === undefined) {
+    if (amount === undefined || amount === null) {
       amount = 0
     }
 
@@ -212,66 +204,19 @@ export default function BusinessOverviewDashboard({
     if (displayCurrency === "RSD") {
       return `${Math.round(convertedAmount).toLocaleString()} RSD`
     } else {
-      // If original was in cents, convert to euros
-      const inEuros = Number(convertedAmount) // Ensure it's a number
-      return `€${inEuros.toFixed(2)}`
+      return `€${convertedAmount.toFixed(2)}`
     }
   }
 
-  // Calculate total business metrics
-  const calculateBusinessMetrics = () => {
-    if (!businessData?.creatorEarnings || !businessMetricsData) {
-      return {
-        totalRevenue: 0,
-        totalOrders: 0,
-        totalAffiliateEarnings: 0,
-        grossProfit: 0,
-        netProfit: 0,
-        investorEarnings: 0,
-        companyProfit: 0,
-        operatingCosts: 0,
-      }
-    }
+  // Calculate investment recovery percentage
+  const calculateInvestmentRecoveryPercentage = () => {
+    if (!businessMetricsData || !businessMetricsData.initialInvestment) return 0
 
-    let totalRevenue = 0
-    let totalOrders = 0
-    let totalAffiliateEarnings = 0
+    const profit = businessMetricsData.profit || 0
+    if (profit >= businessMetricsData.initialInvestment) return 100
 
-    businessData.creatorEarnings.forEach((earning: any) => {
-      totalRevenue += earning.totalSales || 0
-      totalOrders += earning.orderCount || 0
-      totalAffiliateEarnings += earning.totalEarnings || 0
-    })
-
-    // Calculate profits
-    const grossProfit = totalRevenue - totalAffiliateEarnings
-    const operatingCosts = businessMetricsData.operatingCosts * 6 // Assuming 6 months of operation
-    const netProfit = grossProfit - operatingCosts
-
-    // Calculate earnings distribution
-    const investorEarnings = netProfit * (businessMetricsData.investorPercentage / 100)
-    const companyProfit = netProfit - investorEarnings
-
-    return {
-      totalRevenue,
-      totalOrders,
-      totalAffiliateEarnings,
-      grossProfit,
-      netProfit,
-      investorEarnings,
-      companyProfit,
-      operatingCosts,
-      formattedTotalRevenue: formatCurrency(totalRevenue, "EUR"),
-      formattedTotalAffiliateEarnings: formatCurrency(totalAffiliateEarnings, "EUR"),
-      formattedGrossProfit: formatCurrency(grossProfit, "EUR"),
-      formattedNetProfit: formatCurrency(netProfit, "EUR"),
-      formattedInvestorEarnings: formatCurrency(investorEarnings, "EUR"),
-      formattedCompanyProfit: formatCurrency(companyProfit, "EUR"),
-      formattedOperatingCosts: formatCurrency(operatingCosts, "EUR"),
-    }
+    return Math.round((profit / businessMetricsData.initialInvestment) * 100)
   }
-
-  const businessMetrics = calculateBusinessMetrics()
 
   const handleRefresh = () => {
     onRefresh()
@@ -283,44 +228,33 @@ export default function BusinessOverviewDashboard({
     return (
       <div className="container mx-auto py-4 md:py-8 px-4 min-h-screen">
         <div className="flex justify-center items-center h-64">
-          <p className="text-muted-foreground">{t("loading")}</p>
+          <p className="text-muted-foreground">Loading business metrics...</p>
         </div>
       </div>
     )
   }
 
-  // Check if the user is the business admin (perceptionca)
-  const isBusinessAdmin = creatorData?.code?.toLowerCase() === "perceptionca"
-
   return (
     <div className="container mx-auto py-4 md:py-8 px-4 min-h-screen">
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6 md:mb-8">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold">{t("businessOverview")}</h1>
-          <p className="text-sm md:text-base text-muted-foreground">{t("completeBusinessPerformance")}</p>
+          <h1 className="text-2xl md:text-3xl font-bold">Business Overview</h1>
+          <p className="text-sm md:text-base text-muted-foreground">
+            Complete business performance and financial metrics
+          </p>
         </div>
         <div className="flex flex-wrap gap-2 items-center">
-          {isBusinessAdmin && (
-            <Button
-              variant={activeTab === "qrcodes" ? "default" : "outline"}
-              size={isMobile ? "sm" : "default"}
-              onClick={() => setActiveTab(activeTab === "qrcodes" ? "dashboard" : "qrcodes")}
-            >
-              <QrCodeIcon className="h-4 w-4 mr-1 md:mr-2" />
-              {activeTab === "qrcodes" ? "Dashboard" : "QR Codes"}
-            </Button>
-          )}
           <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" size={isMobile ? "sm" : "default"}>
                 <Edit className="h-4 w-4 mr-1 md:mr-2" />
-                {t("edit")}
+                Edit Settings
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
-                <DialogTitle>{t("editBusinessMetrics")}</DialogTitle>
-                <DialogDescription>{t("updateBusinessMetricsDescription")}</DialogDescription>
+                <DialogTitle>Edit Business Metrics</DialogTitle>
+                <DialogDescription>Update your business settings and investment information.</DialogDescription>
               </DialogHeader>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
@@ -329,7 +263,7 @@ export default function BusinessOverviewDashboard({
                     name="initialInvestment"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t("initialInvestment")} (EUR)</FormLabel>
+                        <FormLabel>Initial Investment (EUR)</FormLabel>
                         <FormControl>
                           <Input type="number" step="0.01" {...field} />
                         </FormControl>
@@ -342,7 +276,7 @@ export default function BusinessOverviewDashboard({
                     name="investmentDate"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t("investmentDate")}</FormLabel>
+                        <FormLabel>Investment Date</FormLabel>
                         <FormControl>
                           <Input type="date" {...field} />
                         </FormControl>
@@ -355,7 +289,7 @@ export default function BusinessOverviewDashboard({
                     name="operatingCosts"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t("monthlyOperatingCosts")} (EUR)</FormLabel>
+                        <FormLabel>Monthly Operating Costs (EUR)</FormLabel>
                         <FormControl>
                           <Input type="number" step="0.01" {...field} />
                         </FormControl>
@@ -368,11 +302,11 @@ export default function BusinessOverviewDashboard({
                     name="investorPercentage"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t("investorPercentage")} (%)</FormLabel>
+                        <FormLabel>Investor Percentage (%)</FormLabel>
                         <FormControl>
                           <Input type="number" step="0.01" min="0" max="100" {...field} />
                         </FormControl>
-                        <FormDescription>{t("percentageToInvestors")}</FormDescription>
+                        <FormDescription>Percentage of profit that goes to investors</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -382,17 +316,17 @@ export default function BusinessOverviewDashboard({
                     name="affiliatePercentage"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t("affiliatePercentage")} (%)</FormLabel>
+                        <FormLabel>Affiliate Percentage (%)</FormLabel>
                         <FormControl>
                           <Input type="number" step="0.01" min="0" max="100" {...field} />
                         </FormControl>
-                        <FormDescription>{t("averagePercentageToAffiliates")}</FormDescription>
+                        <FormDescription>Average percentage paid to affiliates</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                   <DialogFooter>
-                    <Button type="submit">{t("saveChanges")}</Button>
+                    <Button type="submit">Save Changes</Button>
                   </DialogFooter>
                 </form>
               </Form>
@@ -404,110 +338,126 @@ export default function BusinessOverviewDashboard({
           </Button>
           <Button variant="outline" size={isMobile ? "sm" : "default"} onClick={handleRefresh} disabled={isLoading}>
             <RefreshCw className={`h-4 w-4 mr-1 md:mr-2 ${isLoading ? "animate-spin" : ""}`} />
-            {isLoading ? t("loading") : t("refresh")}
+            {isLoading ? "Loading..." : "Refresh"}
           </Button>
           <Button variant="outline" size={isMobile ? "sm" : "default"} onClick={onLogout}>
             <LogOut className="h-4 w-4 mr-1 md:mr-2" />
-            {t("logout")}
+            Logout
           </Button>
         </div>
       </div>
 
-      {activeTab === "qrcodes" && isBusinessAdmin ? (
-        <div className="mb-8">
-          <QRCodeGenerator />
-        </div>
-      ) : (
-        <>
-          <div className="grid gap-4 md:gap-6 grid-cols-2 md:grid-cols-4 mb-6 md:mb-8">
+      <Tabs
+        defaultValue="overview"
+        className="space-y-4"
+        value={activeTab}
+        onValueChange={(value) => setActiveTab(value as any)}
+      >
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="revenue">Revenue & Profit</TabsTrigger>
+          <TabsTrigger value="affiliates">Affiliate Program</TabsTrigger>
+          <TabsTrigger value="investment">Investment</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card>
-              <CardHeader className="pb-1 md:pb-2 px-3 md:px-6 pt-3 md:pt-6">
-                <CardTitle className="text-sm md:text-lg">{t("totalRevenue")}</CardTitle>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
               </CardHeader>
-              <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
-                <p className="text-xl md:text-3xl font-bold">{businessMetrics.formattedTotalRevenue}</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {t("from")} {businessMetrics.totalOrders} {t("orders")}
+              <CardContent>
+                <div className="text-2xl font-bold">{formatCurrency(businessMetricsData.grossRevenue)}</div>
+                <p className="text-xs text-muted-foreground">From {businessMetricsData.totalOrders || 0} orders</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Gross Profit</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{formatCurrency(businessMetricsData.netRevenue)}</div>
+                <p className="text-xs text-muted-foreground">After affiliate payouts</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Net Profit</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{formatCurrency(businessMetricsData.profit)}</div>
+                <p className="text-xs text-muted-foreground">After operating costs</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Investment Recovery</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{calculateInvestmentRecoveryPercentage()}%</div>
+                <Progress value={calculateInvestmentRecoveryPercentage()} className="h-2 mt-2" />
+                <p className="text-xs text-muted-foreground mt-2">
+                  {businessMetricsData.investmentRecovered
+                    ? "Initial investment recovered"
+                    : `${formatCurrency(businessMetricsData.remainingInvestment)} remaining`}
                 </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-1 md:pb-2 px-3 md:px-6 pt-3 md:pt-6">
-                <CardTitle className="text-sm md:text-lg">{t("grossProfit")}</CardTitle>
-              </CardHeader>
-              <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
-                <p className="text-xl md:text-3xl font-bold">{businessMetrics.formattedGrossProfit}</p>
-                <p className="text-xs text-muted-foreground mt-1">{t("afterAffiliatePayouts")}</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-1 md:pb-2 px-3 md:px-6 pt-3 md:pt-6">
-                <CardTitle className="text-sm md:text-lg">{t("netProfit")}</CardTitle>
-              </CardHeader>
-              <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
-                <p className="text-xl md:text-3xl font-bold">{businessMetrics.formattedNetProfit}</p>
-                <p className="text-xs text-muted-foreground mt-1">{t("afterOperatingCosts")}</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-1 md:pb-2 px-3 md:px-6 pt-3 md:pt-6">
-                <CardTitle className="text-sm md:text-lg">{t("companyProfit")}</CardTitle>
-              </CardHeader>
-              <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
-                <p className="text-xl md:text-3xl font-bold">{businessMetrics.formattedCompanyProfit}</p>
-                <p className="text-xs text-muted-foreground mt-1">{t("afterInvestorPayouts")}</p>
               </CardContent>
             </Card>
           </div>
 
           <Card className="mb-6 md:mb-8">
             <CardHeader className="px-3 md:px-6 pt-3 md:pt-6 pb-2 md:pb-4">
-              <CardTitle className="text-lg md:text-xl">{t("financialBreakdown")}</CardTitle>
-              <CardDescription className="text-xs md:text-sm">{t("financialMetricsDescription")}</CardDescription>
+              <CardTitle className="text-lg md:text-xl">Financial Breakdown</CardTitle>
+              <CardDescription className="text-xs md:text-sm">
+                Detailed breakdown of revenue, costs, and profit
+              </CardDescription>
             </CardHeader>
             <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
               <div className="space-y-4 md:space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                   <div>
-                    <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">{t("totalRevenue")}</h3>
-                    <p className="text-lg md:text-2xl font-semibold">{businessMetrics.formattedTotalRevenue}</p>
-                  </div>
-                  <div>
-                    <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">
-                      {t("affiliatePayouts")}
-                    </h3>
+                    <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">Total Revenue</h3>
                     <p className="text-lg md:text-2xl font-semibold">
-                      - {businessMetrics.formattedTotalAffiliateEarnings}
+                      {formatCurrency(businessMetricsData.grossRevenue)}
                     </p>
                   </div>
                   <div>
-                    <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">{t("grossProfit")}</h3>
-                    <p className="text-lg md:text-2xl font-semibold">{businessMetrics.formattedGrossProfit}</p>
+                    <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">Affiliate Payouts</h3>
+                    <p className="text-lg md:text-2xl font-semibold">
+                      - {formatCurrency(businessMetricsData.totalAffiliatePayouts)}
+                    </p>
                   </div>
                   <div>
-                    <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">{t("operatingCosts")}</h3>
-                    <p className="text-lg md:text-2xl font-semibold">- {businessMetrics.formattedOperatingCosts}</p>
+                    <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">Gross Profit</h3>
+                    <p className="text-lg md:text-2xl font-semibold">
+                      {formatCurrency(businessMetricsData.netRevenue)}
+                    </p>
                   </div>
                   <div>
-                    <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">{t("netProfit")}</h3>
-                    <p className="text-lg md:text-2xl font-semibold">{businessMetrics.formattedNetProfit}</p>
+                    <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">Operating Costs</h3>
+                    <p className="text-lg md:text-2xl font-semibold">
+                      - {formatCurrency(businessMetricsData.operatingCostsToDate)}
+                    </p>
+                  </div>
+                  <div>
+                    <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">Net Profit</h3>
+                    <p className="text-lg md:text-2xl font-semibold">{formatCurrency(businessMetricsData.profit)}</p>
                   </div>
                   <div>
                     <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">
-                      {t("investorEarnings")} ({businessMetricsData.investorPercentage}%)
-                    </h3>
-                    <p className="text-lg md:text-2xl font-semibold">- {businessMetrics.formattedInvestorEarnings}</p>
-                  </div>
-                  <div>
-                    <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">{t("companyProfit")}</h3>
-                    <p className="text-lg md:text-2xl font-semibold">{businessMetrics.formattedCompanyProfit}</p>
-                  </div>
-                  <div>
-                    <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">
-                      {t("initialInvestment")}
+                      Investor Returns ({businessMetricsData.investorPercentage}%)
                     </h3>
                     <p className="text-lg md:text-2xl font-semibold">
-                      {formatCurrency(businessMetricsData.initialInvestment)}
+                      - {formatCurrency(businessMetricsData.investorReturns)}
+                    </p>
+                  </div>
+                  <div className="col-span-2">
+                    <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">Company Profit</h3>
+                    <p className="text-lg md:text-2xl font-semibold">
+                      {formatCurrency(businessMetricsData.companyProfit)}
                     </p>
                   </div>
                 </div>
@@ -515,41 +465,46 @@ export default function BusinessOverviewDashboard({
                 <Separator />
 
                 <div>
-                  <h3 className="text-sm md:text-base font-medium mb-2">{t("profitDistribution")}</h3>
+                  <h3 className="text-sm md:text-base font-medium mb-2">Profit Distribution</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
                     <Card className="bg-muted/50">
                       <CardHeader className="pb-1 md:pb-2 px-3 md:px-6 pt-3 md:pt-6">
-                        <CardTitle className="text-sm md:text-base">{t("affiliatePayouts")}</CardTitle>
+                        <CardTitle className="text-sm md:text-base">Affiliate Payouts</CardTitle>
                       </CardHeader>
                       <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
                         <p className="text-lg md:text-xl font-bold">
-                          {businessMetrics.formattedTotalAffiliateEarnings}
+                          {formatCurrency(businessMetricsData.totalAffiliatePayouts)}
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">
-                          {((businessMetrics.totalAffiliateEarnings / businessMetrics.totalRevenue) * 100).toFixed(1)}%{" "}
-                          {t("ofRevenue")}
-                        </p>
-                      </CardContent>
-                    </Card>
-                    <Card className="bg-muted/50">
-                      <CardHeader className="pb-1 md:pb-2 px-3 md:px-6 pt-3 md:pt-6">
-                        <CardTitle className="text-sm md:text-base">{t("investorEarnings")}</CardTitle>
-                      </CardHeader>
-                      <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
-                        <p className="text-lg md:text-xl font-bold">{businessMetrics.formattedInvestorEarnings}</p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {businessMetricsData.investorPercentage}% {t("ofNetProfit")}
+                          {businessMetricsData.grossRevenue && businessMetricsData.grossRevenue > 0
+                            ? `${(((businessMetricsData.totalAffiliatePayouts || 0) / businessMetricsData.grossRevenue) * 100).toFixed(1)}% of revenue`
+                            : "0% of revenue"}
                         </p>
                       </CardContent>
                     </Card>
                     <Card className="bg-muted/50">
                       <CardHeader className="pb-1 md:pb-2 px-3 md:px-6 pt-3 md:pt-6">
-                        <CardTitle className="text-sm md:text-base">{t("companyProfit")}</CardTitle>
+                        <CardTitle className="text-sm md:text-base">Investor Returns</CardTitle>
                       </CardHeader>
                       <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
-                        <p className="text-lg md:text-xl font-bold">{businessMetrics.formattedCompanyProfit}</p>
+                        <p className="text-lg md:text-xl font-bold">
+                          {formatCurrency(businessMetricsData.investorReturns)}
+                        </p>
                         <p className="text-xs text-muted-foreground mt-1">
-                          {100 - businessMetricsData.investorPercentage}% {t("ofNetProfit")}
+                          {businessMetricsData.investorPercentage}% of net profit
+                        </p>
+                      </CardContent>
+                    </Card>
+                    <Card className="bg-muted/50">
+                      <CardHeader className="pb-1 md:pb-2 px-3 md:px-6 pt-3 md:pt-6">
+                        <CardTitle className="text-sm md:text-base">Company Profit</CardTitle>
+                      </CardHeader>
+                      <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
+                        <p className="text-lg md:text-xl font-bold">
+                          {formatCurrency(businessMetricsData.companyProfit)}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {100 - businessMetricsData.investorPercentage}% of net profit
                         </p>
                       </CardContent>
                     </Card>
@@ -558,118 +513,250 @@ export default function BusinessOverviewDashboard({
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
 
-          <Card className="mb-6 md:mb-8">
-            <CardHeader className="px-3 md:px-6 pt-3 md:pt-6 pb-2 md:pb-4">
-              <CardTitle className="text-lg md:text-xl">{t("affiliatePerformance")}</CardTitle>
-              <CardDescription className="text-xs md:text-sm">{t("affiliatePerformanceDescription")}</CardDescription>
-            </CardHeader>
-            <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
-              {isLoading ? (
-                <div className="text-center py-6 md:py-8 text-muted-foreground">{t("loadingData")}</div>
-              ) : businessData?.creatorEarnings && businessData.creatorEarnings.length > 0 ? (
+        <TabsContent value="revenue" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Revenue Breakdown</CardTitle>
+                <CardDescription>Analysis of revenue sources and distribution</CardDescription>
+              </CardHeader>
+              <CardContent>
                 <div className="space-y-4">
-                  <div className="overflow-x-auto -mx-3 md:-mx-6">
-                    <div className="inline-block min-w-full align-middle px-3 md:px-6">
-                      <table className="min-w-full divide-y divide-muted">
-                        <thead>
-                          <tr className="text-xs md:text-sm">
-                            <th scope="col" className="py-2 px-2 text-left font-medium">
-                              {t("promoCodeName")}
-                            </th>
-                            <th scope="col" className="py-2 px-2 text-left font-medium">
-                              {t("creatorName")}
-                            </th>
-                            <th scope="col" className="py-2 px-2 text-left font-medium">
-                              {t("commission")}
-                            </th>
-                            <th scope="col" className="py-2 px-2 text-left font-medium">
-                              {t("orderCount")}
-                            </th>
-                            <th scope="col" className="py-2 px-2 text-left font-medium">
-                              {t("totalSales")}
-                            </th>
-                            <th scope="col" className="py-2 px-2 text-left font-medium">
-                              {t("earnings")}
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-muted/50 text-xs md:text-sm">
-                          {businessData.creatorEarnings.map((earning: any) => (
-                            <tr key={earning.code}>
-                              <td className="py-2 px-2 whitespace-nowrap">{earning.code}</td>
-                              <td className="py-2 px-2 whitespace-nowrap">{earning.creatorName}</td>
-                              <td className="py-2 px-2 whitespace-nowrap">{earning.discount}%</td>
-                              <td className="py-2 px-2 whitespace-nowrap">{earning.orderCount}</td>
-                              <td className="py-2 px-2 whitespace-nowrap">
-                                {formatCurrency(earning.totalSales || 0, "EUR")}
-                              </td>
-                              <td className="py-2 px-2 whitespace-nowrap">
-                                {formatCurrency(earning.totalEarnings || 0, "EUR")}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                        <tfoot>
-                          <tr className="font-bold text-xs md:text-sm">
-                            <td colSpan={3} className="py-2 px-2 text-right">
-                              {t("totalLabel")}
-                            </td>
-                            <td className="py-2 px-2">{businessMetrics.totalOrders}</td>
-                            <td className="py-2 px-2">{businessMetrics.formattedTotalRevenue}</td>
-                            <td className="py-2 px-2">{businessMetrics.formattedTotalAffiliateEarnings}</td>
-                          </tr>
-                        </tfoot>
-                      </table>
-                    </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Total Orders</p>
+                    <p className="text-xl font-bold">{businessMetricsData.totalOrders || 0}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Affiliate-Driven Orders</p>
+                    <p className="text-xl font-bold">{businessMetricsData.affiliateOrderCount || 0}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {businessMetricsData.totalOrders && businessMetricsData.totalOrders > 0
+                        ? `${(((businessMetricsData.affiliateOrderCount || 0) / businessMetricsData.totalOrders) * 100).toFixed(1)}% of total orders`
+                        : "0% of total orders"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Affiliate-Driven Sales</p>
+                    <p className="text-xl font-bold">{formatCurrency(businessMetricsData.affiliateDrivenSales)}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {businessMetricsData.grossRevenue && businessMetricsData.grossRevenue > 0
+                        ? `${(((businessMetricsData.affiliateDrivenSales || 0) / businessMetricsData.grossRevenue) * 100).toFixed(1)}% of total revenue`
+                        : "0% of total revenue"}
+                    </p>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Profit Analysis</CardTitle>
+                <CardDescription>Breakdown of costs and profit</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Gross Profit Margin</p>
+                    <p className="text-xl font-bold">
+                      {businessMetricsData.grossRevenue && businessMetricsData.grossRevenue > 0
+                        ? `${(((businessMetricsData.netRevenue || 0) / businessMetricsData.grossRevenue) * 100).toFixed(1)}%`
+                        : "0%"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Net Profit Margin</p>
+                    <p className="text-xl font-bold">
+                      {businessMetricsData.grossRevenue && businessMetricsData.grossRevenue > 0
+                        ? `${(((businessMetricsData.profit || 0) / businessMetricsData.grossRevenue) * 100).toFixed(1)}%`
+                        : "0%"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Operating Costs</p>
+                    <p className="text-xl font-bold">{formatCurrency(businessMetricsData.operatingCostsToDate)}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatCurrency(businessMetricsData.operatingCosts)} per month
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="affiliates" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Affiliate Performance</CardTitle>
+              <CardDescription>Track affiliate sales and commissions</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {businessData?.creatorEarnings && businessData.creatorEarnings.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left py-2 px-2 font-medium">Promo Code</th>
+                        <th className="text-left py-2 px-2 font-medium">Creator</th>
+                        <th className="text-left py-2 px-2 font-medium">Commission</th>
+                        <th className="text-right py-2 px-2 font-medium">Orders</th>
+                        <th className="text-right py-2 px-2 font-medium">Sales</th>
+                        <th className="text-right py-2 px-2 font-medium">Earnings</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {businessData.creatorEarnings.map((earning: any) => (
+                        <tr key={earning.code} className="border-b">
+                          <td className="py-2 px-2">{earning.code}</td>
+                          <td className="py-2 px-2">{earning.creatorName}</td>
+                          <td className="py-2 px-2">{earning.discount}%</td>
+                          <td className="py-2 px-2 text-right">{earning.orderCount}</td>
+                          <td className="py-2 px-2 text-right">{formatCurrency(earning.totalSales)}</td>
+                          <td className="py-2 px-2 text-right">{formatCurrency(earning.totalEarnings)}</td>
+                        </tr>
+                      ))}
+                      <tr className="font-bold">
+                        <td colSpan={3} className="py-2 px-2 text-right">
+                          Total
+                        </td>
+                        <td className="py-2 px-2 text-right">{businessMetricsData.affiliateOrderCount || 0}</td>
+                        <td className="py-2 px-2 text-right">
+                          {formatCurrency(businessMetricsData.affiliateDrivenSales)}
+                        </td>
+                        <td className="py-2 px-2 text-right">
+                          {formatCurrency(businessMetricsData.totalAffiliatePayouts)}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               ) : (
-                <div className="text-center py-6 md:py-8 text-muted-foreground">{t("noEarningsData")}</div>
+                <p className="text-center py-8 text-muted-foreground">No affiliate data available</p>
               )}
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="px-3 md:px-6 pt-3 md:pt-6 pb-2 md:pb-4">
-              <CardTitle className="text-lg md:text-xl">{t("businessMetrics")}</CardTitle>
-              <CardDescription className="text-xs md:text-sm">{t("businessMetricsAndHealth")}</CardDescription>
-            </CardHeader>
-            <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+          <div className="grid gap-4 md:grid-cols-3">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">Affiliate Sales</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{formatCurrency(businessMetricsData.affiliateDrivenSales)}</div>
+                <p className="text-xs text-muted-foreground">
+                  {businessMetricsData.grossRevenue && businessMetricsData.grossRevenue > 0
+                    ? `${(((businessMetricsData.affiliateDrivenSales || 0) / businessMetricsData.grossRevenue) * 100).toFixed(1)}% of total revenue`
+                    : "0% of total revenue"}
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">Affiliate Payouts</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{formatCurrency(businessMetricsData.totalAffiliatePayouts)}</div>
+                <p className="text-xs text-muted-foreground">
+                  Average {businessMetricsData.affiliatePercentage}% commission
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">Net Affiliate Earnings</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {formatCurrency(
+                    (businessMetricsData.affiliateDrivenSales || 0) - (businessMetricsData.totalAffiliatePayouts || 0),
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">After affiliate commissions</p>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="investment" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Investment Overview</CardTitle>
+                <CardDescription>Track your initial investment and returns</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
                   <div>
-                    <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">{t("roi")}</h3>
-                    <p className="text-lg md:text-2xl font-semibold">
-                      {businessMetrics.netProfit > 0
-                        ? `${((businessMetrics.netProfit / businessMetricsData.initialInvestment) * 100).toFixed(1)}%`
-                        : "0%"}
+                    <p className="text-sm font-medium text-muted-foreground">Initial Investment</p>
+                    <p className="text-xl font-bold">{formatCurrency(businessMetricsData.initialInvestment)}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Invested on{" "}
+                      {typeof businessMetricsData.investmentDate === "string"
+                        ? new Date(businessMetricsData.investmentDate).toLocaleDateString()
+                        : new Date(businessMetricsData.investmentDate).toLocaleDateString()}
                     </p>
                   </div>
+
                   <div>
-                    <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">{t("profitMargin")}</h3>
-                    <p className="text-lg md:text-2xl font-semibold">
-                      {businessMetrics.totalRevenue > 0
-                        ? `${((businessMetrics.netProfit / businessMetrics.totalRevenue) * 100).toFixed(1)}%`
-                        : "0%"}
-                    </p>
+                    <p className="text-sm font-medium text-muted-foreground">Investment Recovery</p>
+                    <p className="text-xl font-bold">{calculateInvestmentRecoveryPercentage()}%</p>
+                    <Progress value={calculateInvestmentRecoveryPercentage()} className="h-2 mt-2" />
                   </div>
+
+                  {!businessMetricsData.investmentRecovered && (
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Remaining to Recover</p>
+                      <p className="text-xl font-bold">{formatCurrency(businessMetricsData.remainingInvestment)}</p>
+                    </div>
+                  )}
+
+                  {businessMetricsData.investmentRecovered && (
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Return on Investment</p>
+                      <p className="text-xl font-bold">
+                        {businessMetricsData.initialInvestment > 0
+                          ? `${(((businessMetricsData.profit || 0) / businessMetricsData.initialInvestment) * 100).toFixed(1)}%`
+                          : "0%"}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Investor Returns</CardTitle>
+                <CardDescription>Breakdown of investor earnings</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
                   <div>
-                    <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-1">
-                      {t("averageOrderValue")}
-                    </h3>
-                    <p className="text-lg md:text-2xl font-semibold">
-                      {businessMetrics.totalOrders > 0
-                        ? formatCurrency(businessMetrics.totalRevenue / businessMetrics.totalOrders, "EUR")
-                        : formatCurrency(0, "EUR")}
-                    </p>
+                    <p className="text-sm font-medium text-muted-foreground">Investor Percentage</p>
+                    <p className="text-xl font-bold">{businessMetricsData.investorPercentage}%</p>
+                    <p className="text-xs text-muted-foreground">Of net profit after investment recovery</p>
+                  </div>
+
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Investor Earnings</p>
+                    <p className="text-xl font-bold">{formatCurrency(businessMetricsData.investorReturns)}</p>
+                  </div>
+
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Company Profit</p>
+                    <p className="text-xl font-bold">{formatCurrency(businessMetricsData.companyProfit)}</p>
+                    <p className="text-xs text-muted-foreground">After investor payouts</p>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </>
-      )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }
