@@ -139,6 +139,7 @@ export default function InvestorDashboard({
           investmentDate: new Date("2023-01-15"),
           ownershipPercentage: 15,
           returnPerOrder: 0.05,
+          updatedAt: new Date()
         })
         // Try to load again
         const retryData = await getInvestorData()
@@ -163,6 +164,7 @@ export default function InvestorDashboard({
         investmentDate: new Date(values.investmentDate),
         ownershipPercentage: values.ownershipPercentage,
         returnPerOrder: values.returnPerOrder,
+        updatedAt: new Date()
       })
 
       // Reload investor data

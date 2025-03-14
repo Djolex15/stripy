@@ -6,7 +6,7 @@ import { businessMetrics, investorData, promoCodes, orders } from "@/src/server/
 import { eq } from "drizzle-orm"
 import { db } from "@/src/server/db"
 import { v4 as uuidv4 } from "uuid"
-import type { BusinessMetricsData } from "@/src/lib/types"
+import type { BusinessMetricsData, InvestorData } from "@/src/lib/types"
 import { calculateAndUpdateBusinessMetrics } from "@/src/lib/business-metrics"
 import { sql } from "drizzle-orm"
 
@@ -248,6 +248,79 @@ export async function createDefaultBusinessData() {
     }
   } catch (error) {
     console.error("Failed to create default business data:", error)
+    return { success: false, error }
+  }
+}
+
+// Get investor data from the database
+export async function getInvestorData(): Promise<InvestorData | null> {
+  try {
+    // Retrieve investor data
+    const result = await db.select().from(investorData).limit(1).execute()
+
+    if (result.length > 0) {
+      // Convert string values to numbers for the frontend
+      const investor = result[0]
+      return {
+        id: investor.id,
+        investorName: investor.investorName,
+        initialInvestment: Number.parseFloat(investor.initialInvestment),
+        investmentDate: new Date(investor.investmentDate),
+        ownershipPercentage: Number.parseFloat(investor.ownershipPercentage),
+        returnPerOrder: Number.parseFloat(investor.returnPerOrder),
+        updatedAt: investor.updatedAt ? (investor.updatedAt instanceof Date ? investor.updatedAt : new Date(investor.updatedAt)) : new Date(),
+      }
+    }
+
+    return null
+  } catch (error) {
+    console.error("Failed to get investor data:", error)
+    return null
+  }
+}
+
+// Update investor data in the database
+export async function updateInvestorData(data: InvestorData): Promise<{ success: boolean; id?: string; error?: any }> {
+  try {
+    // Check if we already have investor data with this ID
+    const existingInvestor = await db.select().from(investorData).where(eq(investorData.id, data.id)).limit(1).execute()
+
+    if (existingInvestor.length > 0) {
+      // Update existing record
+      await db
+        .update(investorData)
+        .set({
+          investorName: data.investorName,
+          initialInvestment: data.initialInvestment.toString(),
+          investmentDate: data.investmentDate instanceof Date ? data.investmentDate : new Date(data.investmentDate),
+          ownershipPercentage: data.ownershipPercentage.toString(),
+          returnPerOrder: data.returnPerOrder.toString(),
+          updatedAt: new Date(),
+        })
+        .where(eq(investorData.id, data.id))
+        .execute()
+
+      return { success: true }
+    } else {
+      // Create new record
+      const id = data.id || (await generateId())
+      await db
+        .insert(investorData)
+        .values({
+          id,
+          investorName: data.investorName,
+          initialInvestment: data.initialInvestment.toString(),
+          investmentDate: data.investmentDate instanceof Date ? data.investmentDate : new Date(data.investmentDate),
+          ownershipPercentage: data.ownershipPercentage.toString(),
+          returnPerOrder: data.returnPerOrder.toString(),
+          updatedAt: new Date(),
+        })
+        .execute()
+
+      return { success: true, id }
+    }
+  } catch (error) {
+    console.error("Failed to update investor data:", error)
     return { success: false, error }
   }
 }
